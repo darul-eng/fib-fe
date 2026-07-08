@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, X, Search, ChevronLeft, ChevronRight } from 'luci
 import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../api/client';
 import type { Category, CategoryFieldInput, FieldType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../auth/AuthContext';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -146,7 +147,13 @@ export default function CategoriesPage() {
   }
 
   async function handleDelete(c: Category) {
-    if (!confirm(`Hapus kategori "${c.nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Kategori',
+      message: `Hapus kategori "${c.nama}"? Tindakan ini tidak bisa dibatalkan.`,
+      confirmLabel: 'Hapus',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiDelete(`/categories/${c.id}`);
       showToast(`Kategori "${c.nama}" dihapus`);

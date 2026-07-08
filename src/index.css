@@ -367,6 +367,12 @@ a { color: inherit; text-decoration: none; }
 }
 .btn-outline:hover { background: #f8fafc; }
 
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+.btn-danger:hover { background: #991b1b; }
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 11px;

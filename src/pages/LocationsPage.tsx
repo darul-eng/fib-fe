@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, X, Building2, Layers, DoorOpen, Search } from 'lu
 import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../api/client';
 import type { Location, LocationType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../auth/AuthContext';
 
 const TYPE_LABEL: Record<LocationType, string> = {
@@ -133,7 +134,13 @@ export default function LocationsPage() {
   }
 
   async function handleDelete(l: Location) {
-    if (!confirm(`Hapus lokasi "${l.nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Lokasi',
+      message: `Hapus lokasi "${l.nama}"? Tindakan ini tidak bisa dibatalkan.`,
+      confirmLabel: 'Hapus',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiDelete(`/locations/${l.id}`);
       showToast(`Lokasi "${l.nama}" dihapus`);
