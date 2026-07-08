@@ -59,7 +59,7 @@ export function Sidebar() {
         onClick={toggleCollapse}
         title={collapsed ? 'Perluas Menu' : 'Sembunyikan Label'}
       >
-        <span className="nav-text">Collapse Menu</span>
+        <span className="nav-text"></span>
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
