@@ -4,7 +4,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import CategoriesPage from './pages/CategoriesPage';
 import LoginPage from './pages/LoginPage';
+import { loadTheme } from './theme';
 import './index.css';
+
+// Terapkan tema dinamis (warna primer & lainnya) sebelum/di awal render.
+loadTheme();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
