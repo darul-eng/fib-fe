@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, BarChart2, MapPin, Activity } from 'lucide-react';
-import { ASSETS_INIT, LOCATIONS, MOVEMENTS_INIT, CATEGORIES } from '../data/mockData';
+import { Plus, MapPin, Activity } from 'lucide-react';
+import { ASSETS_INIT, LOCATIONS, MOVEMENTS_INIT } from '../data/mockData';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -14,14 +14,6 @@ export default function DashboardPage() {
   const conditionAlert = assets.filter(a => a.kondisi !== 'Baik').length;
 
   const rooms = LOCATIONS.filter(l => l.type === 'Ruangan');
-
-  function getCatName(id: string) {
-    return CATEGORIES.find(c => c.id === id)?.name ?? '—';
-  }
-
-  function getLocName(id: string) {
-    return LOCATIONS.find(l => l.id === id)?.name ?? '—';
-  }
 
   return (
     <>

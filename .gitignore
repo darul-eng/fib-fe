@@ -3,4 +3,5 @@ dist/
 dist-ssr/
 .env
 *.local
+*.tsbuildinfo
 CLAUDE.md
