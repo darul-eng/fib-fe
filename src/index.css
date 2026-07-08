@@ -1,6 +1,6 @@
 /* ============================================================
-   SIAF — Design System CSS
-   Emerald Green Theme · Inter Font · Vanilla CSS
+   SIMAF — Sistem Manajemen Aset FIB Universitas Hasanuddin
+   Design System CSS — Emerald Green Theme · Inter Font · Vanilla CSS
    Single source of truth untuk semua color tokens & utilities.
    ============================================================ */
 
@@ -96,22 +96,83 @@ a { color: inherit; text-decoration: none; }
   display: block;
 }
 
-/* Sesi pengguna di header */
+/* Sesi pengguna di header — disembunyikan di balik tombol avatar,
+   info nama/peran & logout hanya muncul saat tombol ditekan (dropdown). */
 .user-menu {
+  position: relative;
+}
+.user-menu__trigger {
   display: flex;
   align-items: center;
+  gap: 4px;
+  padding: 4px;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.12s;
+}
+.user-menu__trigger:hover { background: #f1f5f9; }
+.user-menu__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.user-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 12px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 .user-menu__info {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
 }
 .user-menu__nama {
   font-size: 13px;
   font-weight: 600;
   color: #1e293b;
 }
+.user-menu__logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.user-menu__logout:hover { background: #fee2e2; }
 
 /* Layar penuh saat memeriksa sesi login */
 .auth-loading {
@@ -136,17 +197,23 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── Sidebar ──────────────────────────────────────────────── */
+/* Mobile: bottom tab bar, fixed di viewport (bukan sticky) supaya selalu
+   terlihat di bawah layar terlepas dari posisi scroll konten. */
 .sidebar {
   background: #fff;
   border-right: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-around;
   gap: 4px;
-  padding: 8px 12px;
-  z-index: 10;
-  position: sticky;
+  padding: 6px 8px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  z-index: 40;
+  position: fixed;
   bottom: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
   transition: width 0.2s ease, padding 0.2s ease;
@@ -163,6 +230,9 @@ a { color: inherit; text-decoration: none; }
     top: 57px;
     height: calc(100vh - 57px);
     bottom: auto;
+    left: auto;
+    right: auto;
+    border-top: none;
     box-shadow: none;
     overflow-y: auto;
   }
@@ -307,6 +377,8 @@ a { color: inherit; text-decoration: none; }
 .main-content {
   flex: 1;
   padding: 16px;
+  /* Ruang ekstra di bawah supaya konten tidak tertutup bottom nav (fixed) di mobile. */
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
   overflow-y: auto;
   max-width: 1200px;
   width: 100%;
@@ -366,6 +438,12 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--color-border);
 }
 .btn-outline:hover { background: #f8fafc; }
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+.btn-danger:hover { background: #991b1b; }
 
 .btn-sm {
   padding: 6px 12px;
@@ -682,6 +760,34 @@ tbody td { padding: 10px 12px; color: var(--color-ink); vertical-align: middle; 
 @media (min-width: 1024px) {
   .cards-grid { display: none; }
 }
+
+/* ── Static card grid (kategori, lokasi — tanpa mode tabel) ── */
+.cards-static-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .cards-static-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .cards-static-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Pagination ───────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (min-width: 640px) {
+  .pagination { flex-direction: row; justify-content: space-between; }
+}
+.pagination__info { font-size: 11px; color: var(--color-muted); }
+.pagination__controls { display: flex; gap: 4px; }
+.pagination__controls .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── Badges / Pills ───────────────────────────────────────── */
 .badge {

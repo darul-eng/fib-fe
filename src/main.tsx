@@ -6,6 +6,8 @@ import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import LoginPage       from './pages/LoginPage';
 import DashboardPage   from './pages/DashboardPage';
+import CategoriesPage  from './pages/CategoriesPage';
+import LocationsPage   from './pages/LocationsPage';
 import AssetsPage      from './pages/AssetsPage';
 import TrackingPage    from './pages/TrackingPage';
 import ConsumablesPage from './pages/ConsumablesPage';
@@ -28,6 +30,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route element={<RequireAuth />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard"   element={<DashboardPage />} />
+              <Route path="/kategori"    element={<CategoriesPage />} />
+              <Route path="/lokasi"      element={<LocationsPage />} />
               <Route path="/aset"        element={<AssetsPage />} />
               <Route path="/mutasi"      element={<TrackingPage />} />
               <Route path="/persediaan"  element={<ConsumablesPage />} />

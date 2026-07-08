@@ -2,11 +2,13 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { ToastContainer } from './ToastContainer';
+import { ConfirmDialogHost } from './ConfirmDialog';
 
 export function DashboardLayout() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <ToastContainer />
+      <ConfirmDialogHost />
       <Header />
       <div className="layout-shell">
         <Sidebar />

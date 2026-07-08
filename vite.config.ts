@@ -9,9 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'SIAF - Inventaris Aset Fakultas',
-        short_name: 'SIAF',
-        description: 'Sistem Inventaris Aset Fakultas',
+        name: 'SIMAF - Sistem Manajemen Aset FIB Universitas Hasanuddin',
+        short_name: 'SIMAF',
+        description: 'Sistem Manajemen Aset FIB Universitas Hasanuddin',
         theme_color: '#0E3542',
         background_color: '#ffffff',
         display: 'standalone',

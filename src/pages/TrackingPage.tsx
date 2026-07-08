@@ -31,7 +31,7 @@ export default function TrackingPage() {
       assetId: selectedAssetId,
       type: 'Lokasi',
       from, to,
-      by: 'Admin (SIAF)',
+      by: 'Admin (SIMAF)',
       date: new Date().toISOString().split('T')[0],
       notes: notes || 'Mutasi reguler',
     };

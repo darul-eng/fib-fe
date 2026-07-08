@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Monitor,
+  Tags,
+  MapPin,
 } from 'lucide-react';
 
 interface NavItem {
@@ -20,6 +22,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard',    label: 'Dashboard',         icon: <Home size={16} />,    path: '/dashboard' },
+  { id: 'categories',   label: 'Kategori Aset',     icon: <Tags size={16} />,    path: '/kategori' },
+  { id: 'locations',    label: 'Lokasi',            icon: <MapPin size={16} />,  path: '/lokasi' },
   { id: 'assets',       label: 'Manajemen Aset',    icon: <Box size={16} />,     path: '/aset' },
   { id: 'tracking',     label: 'Mutasi & Riwayat',  icon: <Shuffle size={16} />, path: '/mutasi' },
   { id: 'consumables',  label: 'Fase 2: Persediaan',icon: <Package size={16} />, path: '/persediaan' },
@@ -55,7 +59,7 @@ export function Sidebar() {
         onClick={toggleCollapse}
         title={collapsed ? 'Perluas Menu' : 'Sembunyikan Label'}
       >
-        <span className="nav-text">Collapse Menu</span>
+        <span className="nav-text"></span>
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 

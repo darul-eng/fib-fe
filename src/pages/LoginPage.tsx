@@ -39,9 +39,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="login-logo">
           <div className="login-logo__icon">S</div>
-          <span className="login-logo__name">SIAF</span>
+          <span className="login-logo__name">SIMAF</span>
         </div>
-        <p className="login-tagline">Sistem Inventaris Aset Fakultas MIPA</p>
+        <p className="login-tagline">Sistem Manajemen Aset FIB Universitas Hasanuddin</p>
 
         <div className="login-divider" />
 
@@ -117,8 +117,8 @@ export default function LoginPage() {
         </form>
 
         <p className="login-footer">
-          Sistem Inventaris Aset Fakultas · v1.0.0-alpha<br />
-          <span style={{ color: '#cbd5e1' }}>©2026 Fakultas MIPA</span>
+          Sistem Manajemen Aset FIB · v1.0.0-alpha<br />
+          <span style={{ color: '#cbd5e1' }}>©2026 Fakultas Ilmu Budaya Universitas Hasanuddin</span>
         </p>
       </div>
     </div>
