@@ -53,7 +53,7 @@ export default function SettingsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Sistem & Pengaturan Tema Dinamis</h1>
-          <p className="page-subtitle">Sesuaikan tema warna primer SIAF, kelola definisi kategori (JSONB), dan konfigurasi Keycloak SSO.</p>
+          <p className="page-subtitle">Sesuaikan tema warna primer SIMAF, kelola definisi kategori (JSONB), dan konfigurasi Keycloak SSO.</p>
         </div>
       </div>
 

@@ -49,28 +49,28 @@ export interface Asset {
 
 export const ASSETS_INIT: Asset[] = [
   {
-    id: 'ast-1', kode: 'INV/MIPA/2026/LPT-01', qr_token: 'ast-lpt-9988',
+    id: 'ast-1', kode: 'INV/FIB/2026/LPT-01', qr_token: 'ast-lpt-9988',
     nama: 'ThinkPad L14 Gen 3', categoryId: 'cat-1', kondisi: 'Baik',
     tahun_beli: 2024, harga_beli: 14500000, sumber_dana: 'APBN',
     locationId: 'loc-7', holderName: 'Dr. Ahmad Fauzi',
     attributes: { 'CPU': 'Ryzen 5 5625U', 'RAM (GB)': '16', 'Storage': '512GB SSD', 'Serial Number': 'PF3XYZ99' },
   },
   {
-    id: 'ast-2', kode: 'INV/MIPA/2026/LPT-02', qr_token: 'ast-lpt-7766',
+    id: 'ast-2', kode: 'INV/FIB/2026/LPT-02', qr_token: 'ast-lpt-7766',
     nama: 'MacBook Air M2', categoryId: 'cat-1', kondisi: 'Baik',
     tahun_beli: 2025, harga_beli: 18000000, sumber_dana: 'Hibah',
     locationId: 'loc-3', holderName: 'Prof. Siti Aminah',
     attributes: { 'CPU': 'Apple M2', 'RAM (GB)': '8', 'Storage': '256GB SSD', 'Serial Number': 'C02H7123' },
   },
   {
-    id: 'ast-3', kode: 'INV/MIPA/2025/MJA-01', qr_token: 'ast-mja-3322',
+    id: 'ast-3', kode: 'INV/FIB/2025/MJA-01', qr_token: 'ast-mja-3322',
     nama: 'Meja Rapat Kayu Jati', categoryId: 'cat-2', kondisi: 'Rusak Ringan',
     tahun_beli: 2023, harga_beli: 4200000, sumber_dana: 'APBN',
     locationId: 'loc-3', holderName: '-',
     attributes: { 'Bahan': 'Kayu Jati', 'Ukuran': '200x100 cm' },
   },
   {
-    id: 'ast-4', kode: 'INV/MIPA/2026/AC-01', qr_token: 'ast-ac-5544',
+    id: 'ast-4', kode: 'INV/FIB/2026/AC-01', qr_token: 'ast-ac-5544',
     nama: 'AC Daikin Thailand', categoryId: 'cat-3', kondisi: 'Dalam Perbaikan',
     tahun_beli: 2025, harga_beli: 6500000, sumber_dana: 'APBN',
     locationId: 'loc-7', holderName: '-',

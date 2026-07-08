@@ -53,7 +53,7 @@ export default function AssetsPage() {
     const newId = `ast-${assets.length + 1}`;
     const newAsset: Asset = {
       id: newId,
-      kode: `INV/MIPA/${fYear}/${prefix}-0${assets.length + 1}`,
+      kode: `INV/FIB/${fYear}/${prefix}-0${assets.length + 1}`,
       qr_token: 'ast-' + Math.random().toString(36).substring(2, 6),
       nama: fName,
       categoryId: fCat,
@@ -80,7 +80,7 @@ export default function AssetsPage() {
     setAssets(prev => [...prev, {
       ...target,
       id: newId,
-      kode: `INV/MIPA/${target.tahun_beli}/${prefix}-0${assets.length + 1}`,
+      kode: `INV/FIB/${target.tahun_beli}/${prefix}-0${assets.length + 1}`,
       qr_token: 'ast-' + Math.random().toString(36).substring(2, 6),
       nama: `${target.nama} (Copy)`,
     }]);

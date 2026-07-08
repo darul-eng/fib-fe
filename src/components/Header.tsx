@@ -22,8 +22,8 @@ export function Header() {
       <div className="site-header__brand">
         <div className="site-header__logo">S</div>
         <div>
-          <span className="site-header__title">SIAF</span>
-          <span className="site-header__subtitle">Fakultas MIPA</span>
+          <span className="site-header__title">SIMAF</span>
+          <span className="site-header__subtitle">Fakultas Ilmu Budaya</span>
         </div>
       </div>
 

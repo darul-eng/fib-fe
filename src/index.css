@@ -1,6 +1,6 @@
 /* ============================================================
-   SIAF — Design System CSS
-   Emerald Green Theme · Inter Font · Vanilla CSS
+   SIMAF — Sistem Manajemen Aset FIB Universitas Hasanuddin
+   Design System CSS — Emerald Green Theme · Inter Font · Vanilla CSS
    Single source of truth untuk semua color tokens & utilities.
    ============================================================ */
 
@@ -682,6 +682,34 @@ tbody td { padding: 10px 12px; color: var(--color-ink); vertical-align: middle; 
 @media (min-width: 1024px) {
   .cards-grid { display: none; }
 }
+
+/* ── Static card grid (kategori, lokasi — tanpa mode tabel) ── */
+.cards-static-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .cards-static-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .cards-static-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Pagination ───────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (min-width: 640px) {
+  .pagination { flex-direction: row; justify-content: space-between; }
+}
+.pagination__info { font-size: 11px; color: var(--color-muted); }
+.pagination__controls { display: flex; gap: 4px; }
+.pagination__controls .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── Badges / Pills ───────────────────────────────────────── */
 .badge {
