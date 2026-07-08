@@ -1,21 +1,44 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import App from './App';
-import CategoriesPage from './pages/CategoriesPage';
-import LoginPage from './pages/LoginPage';
+import { DashboardLayout } from './components/DashboardLayout';
+import { AuthProvider } from './auth/AuthContext';
+import { RequireAuth } from './auth/RequireAuth';
+import LoginPage       from './pages/LoginPage';
+import DashboardPage   from './pages/DashboardPage';
+import AssetsPage      from './pages/AssetsPage';
+import TrackingPage    from './pages/TrackingPage';
+import ConsumablesPage from './pages/ConsumablesPage';
+import SettingsPage    from './pages/SettingsPage';
+import { loadTheme }   from './theme';
 import './index.css';
+
+// Terapkan tema dinamis (warna primer & lainnya) sebelum/di awal render.
+loadTheme();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<App />}>
-          <Route index element={<Navigate to="/kategori" replace />} />
-          <Route path="kategori" element={<CategoriesPage />} />
-          <Route path="login" element={<LoginPage />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Login — standalone, tidak pakai layout */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Area terkelola — wajib login */}
+          <Route element={<RequireAuth />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard"   element={<DashboardPage />} />
+              <Route path="/aset"        element={<AssetsPage />} />
+              <Route path="/mutasi"      element={<TrackingPage />} />
+              <Route path="/persediaan"  element={<ConsumablesPage />} />
+              <Route path="/pengaturan"  element={<SettingsPage />} />
+            </Route>
+          </Route>
+
+          {/* Default redirect */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );
