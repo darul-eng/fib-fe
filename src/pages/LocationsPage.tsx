@@ -197,7 +197,7 @@ export default function LocationsPage() {
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Lokasi / Ruangan</h1>
+          <h1 className="page-title">Lokasi</h1>
           <p className="page-subtitle">Hierarki Gedung → Lantai → Ruangan untuk penempatan aset.</p>
         </div>
         <div className="toolbar">
