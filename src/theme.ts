@@ -20,17 +20,18 @@ export type Theme = {
 };
 
 // Default = fallback bila backend belum siap. HARUS sama dgn :root di index.css.
+// Emerald green theme — sesuai desain REFERENSI-UI.html
 export const defaultTheme: Theme = {
-  primary: '#1C7293',
-  primaryDark: '#0E3542',
-  accent: '#02C39A',
-  ink: '#1E293B',
-  muted: '#5B6B75',
-  surface: '#FFFFFF',
-  tint: '#EEF4F6',
-  border: '#E3EEF1',
-  danger: '#B42318',
-  bg: '#FFFFFF',
+  primary: '#059669',
+  primaryDark: '#047857',
+  accent: '#10b981',
+  ink: '#0f172a',
+  muted: '#64748b',
+  surface: '#ffffff',
+  tint: '#f1f5f9',
+  border: '#e2e8f0',
+  danger: '#b42318',
+  bg: '#f8fafc',
 };
 
 // Peta key Theme -> nama CSS variable.

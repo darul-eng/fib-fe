@@ -1,18 +1,6 @@
-import { Link, Outlet } from 'react-router-dom';
-
+// App.tsx — tidak digunakan langsung sebagai layout utama.
+// Routing dikelola sepenuhnya di main.tsx menggunakan DashboardLayout.
+// File ini dipertahankan sebagai entry point potensial untuk fitur global.
 export default function App() {
-  return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand">SIAF</div>
-        <nav>
-          <Link to="/kategori">Kategori</Link>
-          <Link to="/login">Login</Link>
-        </nav>
-      </header>
-      <main className="content">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return null;
 }
