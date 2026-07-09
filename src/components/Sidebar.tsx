@@ -15,7 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'locations', label: 'Lokasi', icon: <MapPin size={16} />, path: '/lokasi' },
   { id: 'assets', label: 'Manajemen Aset', icon: <Box size={16} />, path: '/aset' },
   { id: 'tracking', label: 'Mutasi & Riwayat', icon: <Shuffle size={16} />, path: '/mutasi' },
-  { id: 'consumables', label: 'Fase 2: Persediaan', icon: <Package size={16} />, path: '/persediaan' },
+  { id: 'consumables', label: 'Persediaan', icon: <Package size={16} />, path: '/persediaan' },
   { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan' },
 ];
 
@@ -41,7 +41,7 @@ export function Sidebar() {
 
   return (
     <nav
-      className={`w-full md:py-4 md:px-3 bg-white border-r border-slate-200 py-2 px-3 flex md:flex-col justify-around md:justify-start gap-1 z-10 sticky bottom-0 md:top-[57px] md:h-[calc(100vh-57px)] shadow-lg md:shadow-none ${
+      className={`fixed bottom-0 inset-x-0 md:sticky md:inset-x-auto w-full md:py-4 md:px-3 bg-white border-t md:border-t-0 border-r-0 md:border-r border-slate-200 py-2 px-3 flex md:flex-col justify-around md:justify-start gap-1 z-40 md:top-[57px] md:h-[calc(100vh-57px)] shadow-lg md:shadow-none ${
         collapsed ? 'md:w-[72px] md:px-2' : 'md:w-60'
       }`}
     >
@@ -61,13 +61,13 @@ export function Sidebar() {
         return (
           <button
             key={item.id}
-            className={`flex items-center gap-2.5 min-h-11 px-3 py-2 text-sm font-medium rounded-md w-full transition-colors ${
+            className={`flex items-center gap-2.5 min-h-11 px-3 py-3 md:py-2 text-sm font-medium rounded-md w-full transition-colors ${
               collapsed ? 'md:justify-center md:px-0' : ''
             } ${active ? 'bg-primary-tint text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
             onClick={() => navigate(item.path)}
           >
             {item.icon}
-            <span className={collapsed ? 'md:hidden' : ''}>{item.label}</span>
+            <span className={collapsed ? 'hidden' : 'hidden md:inline'}>{item.label}</span>
           </button>
         );
       })}
