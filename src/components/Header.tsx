@@ -28,41 +28,58 @@ export function Header() {
   }
 
   return (
-    <header className="site-header">
-      {/* Brand */}
-      <div className="site-header__brand">
-        <div className="site-header__logo">S</div>
+    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div
+          className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-lg"
+          style={{ backgroundColor: 'var(--color-primary)' }}
+        >
+          S
+        </div>
         <div>
-          <span className="site-header__title">SIMAF</span>
-          <span className="site-header__subtitle">Fakultas Ilmu Budaya</span>
+          <h1 className="text-sm font-semibold tracking-tight leading-none text-slate-800">SIMAF</h1>
+          <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+            Fakultas Ilmu Budaya
+          </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {/* Mobile PWA button */}
-        <button className="btn-icon hide-desktop" title="PWA Simulator">
+      <div className="flex items-center gap-1">
+        <button
+          className="min-h-11 min-w-11 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-md sm:hidden"
+          title="PWA Simulator"
+        >
           <Smartphone size={20} />
         </button>
 
-        {/* Sesi pengguna — disembunyikan di balik tombol, hanya muncul saat ditekan */}
         {user && (
-          <div className="user-menu" ref={menuRef}>
+          <div className="relative" ref={menuRef}>
             <button
-              className="user-menu__trigger"
+              className="min-h-11 flex items-center gap-1.5 px-2 hover:bg-slate-100 rounded-md"
               onClick={() => setMenuOpen((v) => !v)}
               title="Akun"
             >
-              <span className="user-menu__avatar">{user.nama.charAt(0).toUpperCase()}</span>
-              <ChevronDown size={14} className="hide-mobile" />
+              <span
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                style={{ backgroundColor: 'var(--color-primary)' }}
+              >
+                {user.nama.charAt(0).toUpperCase()}
+              </span>
+              <ChevronDown size={14} className="hidden sm:inline text-slate-500" />
             </button>
 
             {menuOpen && (
-              <div className="user-menu__dropdown">
-                <div className="user-menu__info">
-                  <span className="user-menu__nama">{user.nama}</span>
-                  <span className="badge badge-slate">{ROLE_LABEL[user.role] ?? user.role}</span>
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg border border-slate-200 shadow-lg p-2 z-50">
+                <div className="px-2 py-1.5 mb-1 border-b border-slate-100">
+                  <span className="block text-sm font-semibold text-slate-800 truncate">{user.nama}</span>
+                  <span className="inline-block mt-1 px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
+                    {ROLE_LABEL[user.role] ?? user.role}
+                  </span>
                 </div>
-                <button className="user-menu__logout" onClick={handleLogout}>
+                <button
+                  className="w-full min-h-11 flex items-center gap-2 px-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                >
                   <LogOut size={14} /> Keluar
                 </button>
               </div>

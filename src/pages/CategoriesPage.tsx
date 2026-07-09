@@ -163,36 +163,39 @@ export default function CategoriesPage() {
     }
   }
 
-  if (loading) return <p className="text-muted">Memuat kategori...</p>;
+  if (loading) return <p className="text-slate-500 text-sm">Memuat kategori...</p>;
   if (error) {
     return (
       <div>
-        <p style={{ color: 'var(--color-danger)' }}>Gagal memuat: {error}</p>
-        <p className="text-muted">Pastikan backend berjalan & sudah login.</p>
+        <p className="text-red-600 text-sm">Gagal memuat: {error}</p>
+        <p className="text-slate-500 text-sm">Pastikan backend berjalan &amp; sudah login.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="page-header">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="page-title">Kategori Aset</h1>
-          <p className="page-subtitle">{categories.length} kategori terdaftar, lengkap dengan atribut khususnya.</p>
+          <h1 className="text-xl font-bold tracking-tight text-slate-800">Kategori Aset</h1>
+          <p className="text-xs text-slate-500">{categories.length} kategori terdaftar, lengkap dengan atribut khususnya.</p>
         </div>
-        <div className="toolbar">
-          <div className="search-wrap">
-            <Search size={15} />
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2.5 min-h-11 bg-white">
+            <Search size={15} className="text-slate-400 shrink-0" />
             <input
               type="text"
-              className="search-input"
+              className="w-full bg-transparent outline-none text-base sm:text-xs text-slate-800 placeholder:text-slate-400"
               placeholder="Cari nama kategori / atribut..."
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
           {canManage && (
-            <button className="btn btn-primary btn-sm" onClick={openCreate}>
+            <button
+              className="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center gap-1.5"
+              onClick={openCreate}
+            >
               <Plus size={14} /> Kategori Baru
             </button>
           )}
@@ -200,71 +203,134 @@ export default function CategoriesPage() {
       </div>
 
       {canManage && showForm && (
-        <div className="accordion-form">
-          <div className="accordion-form__header">
-            <h3 style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
+        <div className="bg-white p-4 rounded-lg border border-slate-200 mb-6">
+          <div className="flex items-center justify-between mb-3.5">
+            <h3 className="m-0 text-[11px] font-bold uppercase tracking-wider text-slate-500">
               {editingId ? 'Ubah Kategori' : 'Kategori Baru'}
             </h3>
-            <button type="button" className="btn-icon" onClick={closeForm}><X size={14} /></button>
+            <button
+              type="button"
+              className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center"
+              onClick={closeForm}
+            >
+              <X size={14} />
+            </button>
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-grid--2">
-              <div className="form-group">
-                <label className="form-label required">Nama Kategori</label>
-                <input className="form-input" required placeholder="Contoh: Laptop"
-                  value={nama} onChange={(e) => setNama(e.target.value)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Nama Kategori <span className="text-red-600">*</span>
+                </label>
+                <input
+                  className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
+                  required
+                  placeholder="Contoh: Laptop"
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                />
               </div>
-              <div className="form-group">
-                <label className="form-label">Deskripsi</label>
-                <input className="form-input" placeholder="Opsional"
-                  value={deskripsi} onChange={(e) => setDeskripsi(e.target.value)} />
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Deskripsi</label>
+                <input
+                  className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
+                  placeholder="Opsional"
+                  value={deskripsi}
+                  onChange={(e) => setDeskripsi(e.target.value)}
+                />
               </div>
             </div>
 
-            <div className="dynamic-fields" style={{ marginTop: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span className="dynamic-fields__label" style={{ marginBottom: 0 }}>Atribut Khusus Kategori</span>
-                <button type="button" className="btn btn-outline btn-xs" onClick={() => setFields((p) => [...p, newFieldRow()])}>
+            <div className="mt-3.5">
+              <div className="flex justify-between items-center mb-2.5">
+                <span className="text-xs font-semibold text-slate-600">Atribut Khusus Kategori</span>
+                <button
+                  type="button"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold min-h-11 flex items-center gap-1"
+                  onClick={() => setFields((p) => [...p, newFieldRow()])}
+                >
                   <Plus size={12} /> Tambah Atribut
                 </button>
               </div>
 
               {fields.length === 0 && (
-                <p className="text-muted" style={{ fontSize: 11, margin: 0 }}>Belum ada atribut khusus.</p>
+                <p className="text-slate-500 text-[11px] m-0">Belum ada atribut khusus.</p>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="flex flex-col gap-2.5">
                 {fields.map((f) => (
-                  <div key={f._rowId} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
-                    <input className="form-input" placeholder="Nama atribut (mis. CPU)"
-                      value={f.label} onChange={(e) => updateField(f._rowId, { label: e.target.value })} required />
-                    <select className="form-select" value={f.tipe}
-                      onChange={(e) => updateField(f._rowId, { tipe: e.target.value as FieldType })}>
-                      {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  <div
+                    key={f._rowId}
+                    className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-2 items-center"
+                  >
+                    <input
+                      className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
+                      placeholder="Nama atribut (mis. CPU)"
+                      value={f.label}
+                      onChange={(e) => updateField(f._rowId, { label: e.target.value })}
+                      required
+                    />
+                    <select
+                      className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
+                      value={f.tipe}
+                      onChange={(e) => updateField(f._rowId, { tipe: e.target.value as FieldType })}
+                    >
+                      {FIELD_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
                     </select>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#475569', whiteSpace: 'nowrap' }}>
-                      <input type="checkbox" checked={f.wajib ?? false}
-                        onChange={(e) => updateField(f._rowId, { wajib: e.target.checked })} />
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 whitespace-nowrap min-h-11">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={f.wajib ?? false}
+                        onChange={(e) => updateField(f._rowId, { wajib: e.target.checked })}
+                      />
                       Wajib
                     </label>
-                    <button type="button" className="btn-icon" onClick={() => removeField(f._rowId)}>
+                    <button
+                      type="button"
+                      className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center justify-self-start"
+                      onClick={() => removeField(f._rowId)}
+                    >
                       <Trash2 size={14} />
                     </button>
                     {f.tipe === 'select' && (
-                      <input className="form-input" placeholder="Opsi, pisahkan dengan koma (mis. 4 GB, 8 GB, 16 GB)"
-                        style={{ gridColumn: '1 / -1' }}
+                      <input
+                        className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11 sm:col-span-4"
+                        placeholder="Opsi, pisahkan dengan koma (mis. 4 GB, 8 GB, 16 GB)"
                         value={(f.opsi ?? []).join(', ')}
-                        onChange={(e) => updateField(f._rowId, { opsi: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })} />
+                        onChange={(e) =>
+                          updateField(f._rowId, {
+                            opsi: e.target.value
+                              .split(',')
+                              .map((s) => s.trim())
+                              .filter(Boolean),
+                          })
+                        }
+                      />
                     )}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="form-footer">
-              <button type="button" className="btn btn-outline btn-sm" onClick={closeForm}>Batal</button>
-              <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                type="button"
+                className="px-3 py-1.5 border border-slate-200 rounded text-xs font-semibold text-slate-600 min-h-11"
+                onClick={closeForm}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11"
+                disabled={saving}
+              >
                 {saving ? 'Menyimpan...' : 'Simpan Kategori'}
               </button>
             </div>
@@ -272,45 +338,62 @@ export default function CategoriesPage() {
         </div>
       )}
 
-      <div className="cards-static-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {paginated.map((c) => (
-          <div className="card" key={c.id}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+          <div className="bg-white p-4 rounded-lg border border-slate-200" key={c.id}>
+            <div className="flex justify-between items-start mb-2">
               <div>
-                <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>{c.nama}</h3>
-                {c.deskripsi && <p className="text-muted" style={{ fontSize: 11, margin: '2px 0 0' }}>{c.deskripsi}</p>}
+                <h3 className="m-0 text-sm font-bold text-slate-800">{c.nama}</h3>
+                {c.deskripsi && <p className="text-slate-500 text-[11px] mt-0.5 mb-0">{c.deskripsi}</p>}
               </div>
               {canManage && (
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                  <button className="btn-icon" title="Ubah" onClick={() => openEdit(c)}><Pencil size={14} /></button>
-                  <button className="btn-icon" title="Hapus" onClick={() => handleDelete(c)}><Trash2 size={14} /></button>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center"
+                    title="Ubah"
+                    onClick={() => openEdit(c)}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center"
+                    title="Hapus"
+                    onClick={() => handleDelete(c)}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               )}
             </div>
             {c.fields.length === 0 ? (
-              <p className="text-muted" style={{ fontSize: 11 }}>Tanpa atribut khusus</p>
+              <p className="text-slate-500 text-[11px]">Tanpa atribut khusus</p>
             ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div className="flex flex-wrap gap-1.5">
                 {c.fields.map((f) => (
-                  <span key={f.id} className="chip">{f.label}{f.wajib ? '*' : ''}</span>
+                  <span key={f.id} className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
+                    {f.label}
+                    {f.wajib ? '*' : ''}
+                  </span>
                 ))}
               </div>
             )}
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="text-muted" style={{ gridColumn: '1/-1', textAlign: 'center', padding: 24 }}>
+          <p className="text-slate-500 text-sm text-center py-6 col-span-full">
             {categories.length === 0 ? 'Belum ada kategori. Buat kategori pertama.' : 'Tidak ada kategori yang cocok dengan pencarian.'}
           </p>
         )}
       </div>
 
       {filtered.length > PAGE_SIZE && (
-        <div className="pagination">
-          <span className="pagination__info">Halaman {currentPage} dari {totalPages} ({filtered.length} kategori)</span>
-          <div className="pagination__controls">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+          <span className="text-xs text-slate-500">
+            Halaman {currentPage} dari {totalPages} ({filtered.length} kategori)
+          </span>
+          <div className="flex items-center gap-2">
             <button
-              className="btn-icon"
+              className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center disabled:opacity-40 disabled:pointer-events-none border border-slate-200"
               disabled={currentPage <= 1}
               onClick={() => setPage((p) => p - 1)}
               title="Sebelumnya"
@@ -318,7 +401,7 @@ export default function CategoriesPage() {
               <ChevronLeft size={16} />
             </button>
             <button
-              className="btn-icon"
+              className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center disabled:opacity-40 disabled:pointer-events-none border border-slate-200"
               disabled={currentPage >= totalPages}
               onClick={() => setPage((p) => p + 1)}
               title="Berikutnya"

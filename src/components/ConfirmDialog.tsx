@@ -39,29 +39,33 @@ export function ConfirmDialogHost() {
   if (!pending) return null;
 
   return (
-    <div className="modal-overlay" onClick={() => close(false)}>
-      <div className="modal-box" style={{ maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+    <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4" onClick={() => close(false)}>
+      <div
+        className="bg-white rounded-xl max-w-sm w-full border border-slate-200 p-5 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex gap-3 items-start">
           {pending.danger && (
-            <div style={{
-              width: 36, height: 36, borderRadius: 8, background: '#fef2f2',
-              color: 'var(--color-danger)', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', flexShrink: 0,
-            }}>
+            <div className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
               <AlertTriangle size={18} />
             </div>
           )}
           <div>
-            <h3 className="modal-box__title">{pending.title ?? 'Konfirmasi'}</h3>
-            <p className="modal-box__desc" style={{ marginBottom: 0 }}>{pending.message}</p>
+            <h3 className="text-sm font-bold text-slate-800 mb-1">{pending.title ?? 'Konfirmasi'}</h3>
+            <p className="text-xs text-slate-500">{pending.message}</p>
           </div>
         </div>
-        <div className="modal-box__footer">
-          <button className="btn btn-outline btn-sm" onClick={() => close(false)}>
+        <div className="flex justify-end gap-2 mt-5">
+          <button
+            className="min-h-11 px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600"
+            onClick={() => close(false)}
+          >
             {pending.cancelLabel ?? 'Batal'}
           </button>
           <button
-            className={`btn btn-sm ${pending.danger ? 'btn-danger' : 'btn-primary'}`}
+            className={`min-h-11 px-4 rounded-lg text-xs font-bold text-white ${
+              pending.danger ? 'bg-red-600 hover:bg-red-700' : 'btn-primary'
+            }`}
             onClick={() => close(true)}
             autoFocus
           >

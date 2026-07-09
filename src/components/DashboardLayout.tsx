@@ -6,13 +6,13 @@ import { ConfirmDialogHost } from './ConfirmDialog';
 
 export function DashboardLayout() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="min-h-screen flex flex-col">
       <ToastContainer />
       <ConfirmDialogHost />
       <Header />
-      <div className="layout-shell">
+      <div className="flex-1 flex flex-col md:flex-row">
         <Sidebar />
-        <main className="main-content">
+        <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
           <Outlet />
         </main>
       </div>
