@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, History, MapPin, MessageSquare, Search, Shuffle, User, X } from 'lucide-react';
-import { apiGet, ApiError, listAssets, listMovements, moveAsset } from '../api/client';
+import { apiGet, ApiError, getAssetByToken, listAssets, listMovements, moveAsset } from '../api/client';
 import type { Asset, AssetCondition, Location, Movement } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 
@@ -73,6 +74,7 @@ function MovementEntry({ m }: { m: Movement }) {
 }
 
 export default function TrackingPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -125,6 +127,17 @@ export default function TrackingPage() {
       .then((data) => setRooms(data.filter((l) => l.tipe === 'ruangan')))
       .catch(() => showToast('Gagal memuat lokasi', 'danger'));
   }, []);
+
+  // Dibuka dari hasil scan QR (Header) — /mutasi?assetToken=... langsung membuka form mutasi terisi.
+  useEffect(() => {
+    const token = searchParams.get('assetToken');
+    if (!token) return;
+    setSearchParams({}, { replace: true });
+    getAssetByToken(token)
+      .then((asset) => openPanel(asset))
+      .catch(() => showToast('Aset dari QR tidak ditemukan', 'danger'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (selectedAsset) return;

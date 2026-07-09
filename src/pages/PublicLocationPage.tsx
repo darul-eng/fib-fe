@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { DoorOpen } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { DoorOpen, ArrowLeft } from 'lucide-react';
 import { getPublicLocation, ApiError } from '../api/client';
 import type { PublicLocation, AssetCondition } from '../api/client';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
+import { useAuth } from '../auth/AuthContext';
 
 export default function PublicLocationPage() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [location, setLocation] = useState<PublicLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -36,6 +39,14 @@ export default function PublicLocationPage() {
           <h1 className="text-sm font-semibold tracking-tight leading-none text-slate-800">SIAP</h1>
           <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Isi Ruangan Publik</span>
         </div>
+        {user && (
+          <button
+            className="ml-auto min-h-11 flex items-center gap-1 px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-md"
+            onClick={() => navigate('/dashboard')}
+          >
+            <ArrowLeft size={14} /> Kembali
+          </button>
+        )}
       </header>
 
       <main className="flex-1 w-full max-w-lg mx-auto p-4">

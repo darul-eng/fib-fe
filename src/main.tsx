@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './components/DashboardLayout';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import LoginPage       from './pages/LoginPage';
-import DashboardPage   from './pages/DashboardPage';
 import CategoriesPage  from './pages/CategoriesPage';
 import LocationsPage   from './pages/LocationsPage';
 import AssetsPage      from './pages/AssetsPage';
@@ -16,6 +15,9 @@ import PublicAssetPage    from './pages/PublicAssetPage';
 import PublicLocationPage from './pages/PublicLocationPage';
 import { loadTheme }   from './theme';
 import './index.css';
+
+// Lazy: DashboardPage memuat recharts, cukup besar untuk di-split dari bundle awal.
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 
 // Terapkan tema dinamis (warna primer & lainnya) sebelum/di awal render.
 loadTheme();
@@ -35,7 +37,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           {/* Area terkelola — wajib login */}
           <Route element={<RequireAuth />}>
             <Route element={<DashboardLayout />}>
-              <Route path="/dashboard"   element={<DashboardPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <Suspense fallback={<p className="text-xs text-slate-400">Memuat dashboard...</p>}>
+                    <DashboardPage />
+                  </Suspense>
+                }
+              />
               <Route path="/kategori"    element={<CategoriesPage />} />
               <Route path="/lokasi"      element={<LocationsPage />} />
               <Route path="/aset"        element={<AssetsPage />} />

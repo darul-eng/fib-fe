@@ -238,6 +238,10 @@ export function duplicateAsset(id: string, jumlah: number) {
   return apiPost<Asset[]>(`/assets/${id}/duplicate`, { jumlah });
 }
 
+export function getAssetByToken(token: string) {
+  return apiGet<Asset>(`/assets/by-token/${token}`);
+}
+
 export function uploadAssetPhoto(id: string, file: File) {
   const form = new FormData();
   form.append('foto', file);
