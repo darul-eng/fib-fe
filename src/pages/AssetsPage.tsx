@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Search,
@@ -10,6 +11,10 @@ import {
   X,
   Image as ImageIcon,
   FileText,
+  RefreshCw,
+  MoreVertical,
+  QrCode,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { apiGet, ApiError } from '../api/client';
 import type {
@@ -17,6 +22,7 @@ import type {
   AssetCondition,
   AssetInput,
   Category,
+  FieldType,
   ImportPreviewResult,
   Location,
 } from '../api/client';
@@ -30,25 +36,60 @@ import {
   previewAssetImport,
   commitAssetImport,
   downloadAssetImportTemplate,
+  printQrBatch,
+  regenerateAssetToken,
 } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
+import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const KONDISI_OPTIONS: AssetCondition[] = ['baik', 'rusak_ringan', 'rusak_berat', 'perbaikan'];
+const ATTRIBUTE_PREVIEW_LIMIT = 3;
 
-const KONDISI_LABEL: Record<AssetCondition, string> = {
-  baik: 'Baik',
-  rusak_ringan: 'Rusak Ringan',
-  rusak_berat: 'Rusak Berat',
-  perbaikan: 'Dalam Perbaikan',
-  dihapus: 'Dihapus',
-};
+function formatAttributeValue(tipe: FieldType, value: unknown): string {
+  if (tipe === 'boolean') return value === true || value === 'true' ? 'Ya' : 'Tidak';
+  if (tipe === 'date') {
+    const d = new Date(String(value));
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+  }
+  return String(value);
+}
 
-function kondisiBadgeClass(kondisi: AssetCondition) {
-  if (kondisi === 'baik') return 'bg-green-100 text-green-800';
-  if (kondisi === 'rusak_ringan') return 'bg-yellow-100 text-yellow-800';
-  if (kondisi === 'perbaikan') return 'bg-amber-100 text-amber-800';
-  return 'bg-red-100 text-red-800';
+function assetAttributeEntries(asset: Asset): { label: string; value: string }[] {
+  return asset.category.fields
+    .filter((f) => {
+      const v = asset.attributes[f.key];
+      return v !== undefined && v !== null && v !== '';
+    })
+    .map((f) => ({ label: f.label, value: formatAttributeValue(f.tipe, asset.attributes[f.key]) }));
+}
+
+function AttributeSummary({ asset }: { asset: Asset }) {
+  const entries = assetAttributeEntries(asset);
+  if (entries.length === 0) return <span className="text-slate-300">—</span>;
+  const shown = entries.slice(0, ATTRIBUTE_PREVIEW_LIMIT);
+  const rest = entries.length - shown.length;
+  return (
+    <div className="space-y-0.5">
+      {shown.map((e) => (
+        <div key={e.label} className="truncate max-w-[200px]" title={`${e.label}: ${e.value}`}>
+          {e.label}: <strong className="text-slate-700">{e.value}</strong>
+        </div>
+      ))}
+      {rest > 0 && <span className="text-slate-400">+{rest} atribut lainnya</span>}
+    </div>
+  );
 }
 
 type FormState = {
@@ -62,6 +103,106 @@ type FormState = {
   holderName: string;
   attributes: Record<string, string>;
 };
+
+const MENU_WIDTH = 176; // w-44
+
+function RowActionsMenu({
+  onDuplicate,
+  onRegenerateToken,
+  onArchive,
+}: {
+  onDuplicate: () => void;
+  onRegenerateToken: () => void;
+  onArchive: () => void;
+}) {
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  function openMenu() {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCoords({
+      top: rect.bottom + 4,
+      left: Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8),
+    });
+  }
+
+  useEffect(() => {
+    if (!coords) return;
+    function close() {
+      setCoords(null);
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) {
+        close();
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    // capture=true: tabel punya scroll horizontal sendiri, event scroll tidak bubble ke window
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [coords]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        className="p-1 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 lg:p-1 flex items-center justify-center hover:bg-slate-100 rounded text-slate-500"
+        title="Menu lainnya"
+        onClick={() => (coords ? setCoords(null) : openMenu())}
+      >
+        <MoreVertical size={15} />
+      </button>
+      {coords &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-50 bg-white rounded-lg border border-slate-200 shadow-lg p-1.5"
+            style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
+          >
+            <button
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+              onClick={() => {
+                setCoords(null);
+                onDuplicate();
+              }}
+            >
+              <Copy size={13} /> Duplikasi
+            </button>
+            <button
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+              onClick={() => {
+                setCoords(null);
+                onRegenerateToken();
+              }}
+            >
+              <RefreshCw size={13} /> Buat Ulang Token QR
+            </button>
+            <div className="h-px bg-slate-100 my-1" />
+            <button
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md"
+              onClick={() => {
+                setCoords(null);
+                onArchive();
+              }}
+            >
+              <Archive size={13} /> Arsipkan
+            </button>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 const EMPTY_FORM: FormState = {
   nama: '',
@@ -87,6 +228,14 @@ export default function AssetsPage() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterKondisi, setFilterKondisi] = useState('');
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const hasActiveFilter = filterCategory !== '' || filterKondisi !== '';
+
+  function resetFilters() {
+    setFilterCategory('');
+    setFilterKondisi('');
+    setPage(1);
+  }
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -101,6 +250,12 @@ export default function AssetsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportPreviewResult | null>(null);
   const [importing, setImporting] = useState(false);
+
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printSelection, setPrintSelection] = useState<Set<string>>(new Set());
+  const [printColumns, setPrintColumns] = useState(3);
+  const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('sedang');
+  const [printing, setPrinting] = useState(false);
 
   const rooms = locations.filter((l) => l.tipe === 'ruangan');
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
@@ -266,14 +421,71 @@ export default function AssetsPage() {
   async function handleDownloadTemplate() {
     try {
       const blob = await downloadAssetImportTemplate(filterCategory || undefined);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'template-import-aset.xlsx';
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, 'template-import-aset.xlsx');
     } catch {
       showToast('Gagal mengunduh template', 'danger');
+    }
+  }
+
+  function openPrintModal() {
+    setPrintSelection(new Set(assets.map((a) => a.id)));
+    setShowPrintModal(true);
+  }
+
+  function togglePrintSelection(id: string) {
+    setPrintSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handlePrintSingle(asset: Asset) {
+    setPrinting(true);
+    try {
+      const blob = await printQrBatch({ assetIds: [asset.id], columns: printColumns, size: printSize });
+      downloadBlob(blob, `qr-${asset.kode.replace(/\//g, '-')}.pdf`);
+    } catch {
+      showToast('Gagal membuat label QR', 'danger');
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  async function handlePrintBatch() {
+    if (printSelection.size === 0) return;
+    setPrinting(true);
+    try {
+      const blob = await printQrBatch({
+        assetIds: Array.from(printSelection),
+        columns: printColumns,
+        size: printSize,
+      });
+      downloadBlob(blob, 'label-qr-aset.pdf');
+      showToast(`Label QR untuk ${printSelection.size} aset berhasil dibuat`);
+      setShowPrintModal(false);
+    } catch {
+      showToast('Gagal membuat label QR', 'danger');
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  async function handleRegenerateToken(asset: Asset) {
+    const ok = await confirmDialog({
+      title: 'Buat Ulang Token QR',
+      message: `Token QR lama untuk "${asset.nama}" tidak akan berlaku lagi. Cetak label baru setelah ini.`,
+      confirmLabel: 'Buat Ulang',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await regenerateAssetToken(asset.id);
+      showToast('Token QR berhasil dibuat ulang, cetak label baru');
+      await loadAssets();
+    } catch {
+      showToast('Gagal membuat ulang token QR', 'danger');
     }
   }
 
@@ -281,76 +493,144 @@ export default function AssetsPage() {
 
   return (
     <>
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4 sm:mb-6">
-        <div>
+      <div className="mb-4 sm:mb-6">
+        <div className="mb-3">
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Manajemen Aset Tetap</h1>
           <p className="text-[11px] sm:text-xs text-slate-500">Pencatatan data, duplikasi massal, dan atribut kustom per kategori.</p>
         </div>
 
-        <div className="flex flex-wrap gap-2 items-center">
-          <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:flex-none">
-            <Search size={16} className="text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Cari nama / kode..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 min-h-11 text-base sm:text-xs border border-slate-200 rounded-lg w-full sm:w-48 bg-white outline-none"
-            />
-          </form>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+          <div className="flex items-center gap-2 lg:flex-1 lg:min-w-0">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-0">
+              <Search size={16} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Cari nama / kode..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-3 min-h-11 w-full text-base sm:text-xs border border-transparent sm:border-slate-200 rounded-full sm:rounded-lg bg-slate-100 sm:bg-white outline-none focus:bg-white focus:border-slate-300 transition-colors"
+              />
+            </form>
 
-          <select
-            value={filterCategory}
-            onChange={(e) => {
-              setFilterCategory(e.target.value);
-              setPage(1);
-            }}
-            className="min-h-11 text-base sm:text-xs p-2 border border-slate-200 rounded-lg bg-white"
-          >
-            <option value="">Semua Kategori</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nama}
-              </option>
-            ))}
-          </select>
+            <button
+              type="button"
+              title="Filter"
+              className={`relative shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-full sm:rounded-lg border lg:hidden transition-colors ${
+                hasActiveFilter
+                  ? 'border-transparent sm:border-primary bg-primary-tint text-primary'
+                  : 'border-transparent sm:border-slate-200 bg-slate-100 sm:bg-white text-slate-500'
+              }`}
+              onClick={() => setShowFilterPanel((v) => !v)}
+            >
+              <SlidersHorizontal size={16} />
+              {hasActiveFilter && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />}
+            </button>
 
-          <select
-            value={filterKondisi}
-            onChange={(e) => {
-              setFilterKondisi(e.target.value);
-              setPage(1);
-            }}
-            className="min-h-11 text-base sm:text-xs p-2 border border-slate-200 rounded-lg bg-white"
-          >
-            <option value="">Semua Kondisi</option>
-            {KONDISI_OPTIONS.map((k) => (
-              <option key={k} value={k}>
-                {KONDISI_LABEL[k]}
-              </option>
-            ))}
-          </select>
+            <div className="hidden lg:flex gap-2">
+              <select
+                value={filterCategory}
+                onChange={(e) => {
+                  setFilterCategory(e.target.value);
+                  setPage(1);
+                }}
+                className="w-40 min-h-11 text-xs p-2 border border-slate-200 rounded-lg bg-white"
+              >
+                <option value="">Semua Kategori</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nama}
+                  </option>
+                ))}
+              </select>
 
-          <button
-            className="btn-primary flex items-center gap-1.5 min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
-            onClick={openCreateForm}
-          >
-            <Plus size={16} /> Aset Baru
-          </button>
-          <button
-            className="bg-slate-800 hover:bg-slate-700 text-white flex items-center gap-1.5 min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
-            onClick={() => setShowImport(true)}
-          >
-            <Download size={16} /> Import
-          </button>
-          <button
-            disabled
-            title="Cetak QR tersedia di Tahap 4"
-            className="bg-slate-100 text-slate-400 cursor-not-allowed flex items-center gap-1.5 min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-slate-200"
-          >
-            <Printer size={16} /> Cetak QR
-          </button>
+              <select
+                value={filterKondisi}
+                onChange={(e) => {
+                  setFilterKondisi(e.target.value);
+                  setPage(1);
+                }}
+                className="w-40 min-h-11 text-xs p-2 border border-slate-200 rounded-lg bg-white"
+              >
+                <option value="">Semua Kondisi</option>
+                {KONDISI_OPTIONS.map((k) => (
+                  <option key={k} value={k}>
+                    {KONDISI_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 lg:shrink-0">
+            <button
+              className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-full sm:rounded-lg text-xs font-bold shadow-sm"
+              onClick={openCreateForm}
+            >
+              <Plus size={16} /> Aset Baru
+            </button>
+            <button
+              title="Import Excel/CSV"
+              className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-full sm:rounded-lg text-xs font-bold shadow-sm"
+              onClick={() => setShowImport(true)}
+            >
+              <Download size={16} /> <span className="hidden sm:inline">Import</span>
+            </button>
+            <button
+              disabled={assets.length === 0}
+              title="Cetak label QR massal"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-full sm:rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={openPrintModal}
+            >
+              <Printer size={16} /> <span className="hidden sm:inline">Cetak QR</span>
+            </button>
+          </div>
         </div>
+
+        {showFilterPanel && (
+          <div className="lg:hidden mt-2 flex items-center gap-2 p-2 bg-slate-50 rounded-2xl sm:rounded-lg border border-slate-100">
+            <select
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setPage(1);
+              }}
+              className="flex-1 min-w-0 min-h-11 text-base sm:text-xs p-2 border border-slate-200 rounded-xl sm:rounded-lg bg-white"
+            >
+              <option value="">Semua Kategori</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nama}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filterKondisi}
+              onChange={(e) => {
+                setFilterKondisi(e.target.value);
+                setPage(1);
+              }}
+              className="flex-1 min-w-0 min-h-11 text-base sm:text-xs p-2 border border-slate-200 rounded-xl sm:rounded-lg bg-white"
+            >
+              <option value="">Semua Kondisi</option>
+              {KONDISI_OPTIONS.map((k) => (
+                <option key={k} value={k}>
+                  {KONDISI_LABEL[k]}
+                </option>
+              ))}
+            </select>
+
+            {hasActiveFilter && (
+              <button
+                type="button"
+                className="shrink-0 min-h-11 px-3 rounded-xl sm:rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-200"
+                onClick={resetFilters}
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {showForm && (
@@ -575,7 +855,9 @@ export default function AssetsPage() {
                     <td className="p-3">
                       <strong className="block text-slate-800">{a.nama}</strong>
                       <span className="font-mono text-[10px] text-slate-400">{a.kode}</span>
-                      <span className="text-[10px] text-primary font-semibold block">Token: {a.qrToken}</span>
+                      <span className="text-[9px] text-slate-400 font-mono flex items-center gap-1 mt-0.5" title="Token QR">
+                        <QrCode size={10} /> {a.qrToken}
+                      </span>
                     </td>
                     <td className="p-3">
                       <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
@@ -590,30 +872,29 @@ export default function AssetsPage() {
                     <td className="p-3 text-slate-700">{a.location?.nama ?? '—'}</td>
                     <td className="p-3 font-medium text-slate-700">{a.person?.nama ?? '—'}</td>
                     <td className="p-3 text-[10px] text-slate-500">
-                      {Object.entries(a.attributes).map(([k, v]) => (
-                        <div key={k}>
-                          {k}: <strong>{String(v)}</strong>
-                        </div>
-                      ))}
+                      <AttributeSummary asset={a} />
                     </td>
                     <td className="p-3">
-                      <div className="flex gap-1 justify-end">
+                      <div className="flex gap-1 justify-end items-center">
                         <button className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Edit" onClick={() => openEditForm(a)}>
                           <Pencil size={15} />
                         </button>
                         <button
                           className="p-1 hover:bg-slate-100 rounded text-slate-500"
-                          title="Duplikasi"
-                          onClick={() => {
+                          title="Cetak QR"
+                          disabled={printing}
+                          onClick={() => void handlePrintSingle(a)}
+                        >
+                          <Printer size={15} />
+                        </button>
+                        <RowActionsMenu
+                          onDuplicate={() => {
                             setDuplicateTarget(a);
                             setDuplicateCount(2);
                           }}
-                        >
-                          <Copy size={15} />
-                        </button>
-                        <button className="p-1 hover:bg-slate-100 rounded text-red-500" title="Arsipkan" onClick={() => handleArchive(a)}>
-                          <Archive size={15} />
-                        </button>
+                          onRegenerateToken={() => void handleRegenerateToken(a)}
+                          onArchive={() => void handleArchive(a)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -643,6 +924,11 @@ export default function AssetsPage() {
                 <div>
                   Pemegang: <strong className="text-slate-800">{a.person?.nama ?? '—'}</strong>
                 </div>
+                {assetAttributeEntries(a).length > 0 && (
+                  <div className="pt-1">
+                    <AttributeSummary asset={a} />
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 mt-3">
                 <button
@@ -652,20 +938,21 @@ export default function AssetsPage() {
                   <Pencil size={13} /> Edit
                 </button>
                 <button
-                  className="flex-1 min-h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
-                  onClick={() => {
+                  className="min-h-11 min-w-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center justify-center"
+                  title="Cetak QR"
+                  disabled={printing}
+                  onClick={() => void handlePrintSingle(a)}
+                >
+                  <Printer size={15} />
+                </button>
+                <RowActionsMenu
+                  onDuplicate={() => {
                     setDuplicateTarget(a);
                     setDuplicateCount(2);
                   }}
-                >
-                  <Copy size={13} /> Duplikasi
-                </button>
-                <button
-                  className="min-h-11 min-w-11 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg flex items-center justify-center"
-                  onClick={() => handleArchive(a)}
-                >
-                  <Archive size={15} />
-                </button>
+                  onRegenerateToken={() => void handleRegenerateToken(a)}
+                  onArchive={() => void handleArchive(a)}
+                />
               </div>
             </div>
           ))}
@@ -698,6 +985,102 @@ export default function AssetsPage() {
           </div>
         )}
       </div>
+
+      {showPrintModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setShowPrintModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl max-w-2xl w-full border border-slate-200 p-5 my-8 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Cetak Massal Label QR (Grid A4)</h3>
+                <p className="text-[11px] text-slate-500">Pilih aset yang akan dicetak labelnya.</p>
+              </div>
+              <button
+                className="min-h-11 min-w-11 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-md"
+                onClick={() => setShowPrintModal(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-3 p-3 bg-slate-50 rounded-lg mb-4 text-xs">
+              <div>
+                <span className="text-slate-500 block mb-1 font-semibold">Jumlah Kolom</span>
+                <select
+                  value={printColumns}
+                  onChange={(e) => setPrintColumns(Number(e.target.value))}
+                  className="p-1.5 min-h-11 sm:min-h-0 border border-slate-200 rounded"
+                >
+                  <option value={2}>2 Kolom</option>
+                  <option value={3}>3 Kolom</option>
+                  <option value={4}>4 Kolom</option>
+                </select>
+              </div>
+              <div>
+                <span className="text-slate-500 block mb-1 font-semibold">Ukuran Label</span>
+                <select
+                  value={printSize}
+                  onChange={(e) => setPrintSize(e.target.value as 'kecil' | 'sedang')}
+                  className="p-1.5 min-h-11 sm:min-h-0 border border-slate-200 rounded"
+                >
+                  <option value="sedang">Sedang</option>
+                  <option value="kecil">Kecil</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                className="ml-auto text-[11px] font-semibold text-primary underline self-end"
+                onClick={() =>
+                  setPrintSelection((prev) =>
+                    prev.size === assets.length ? new Set() : new Set(assets.map((a) => a.id)),
+                  )
+                }
+              >
+                {printSelection.size === assets.length ? 'Batalkan semua' : 'Pilih semua'}
+              </button>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto border border-slate-100 rounded-lg divide-y divide-slate-100">
+              {assets.map((a) => (
+                <label key={a.id} className="flex items-center gap-2.5 p-2.5 min-h-11 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 shrink-0"
+                    checked={printSelection.has(a.id)}
+                    onChange={() => togglePrintSelection(a.id)}
+                  />
+                  <span className="text-xs font-semibold text-slate-700 truncate">{a.nama}</span>
+                  <span className="text-[10px] font-mono text-slate-400 truncate">{a.kode}</span>
+                </label>
+              ))}
+              {assets.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-6">Tidak ada aset di halaman ini.</p>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-end mt-4">
+              <button
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600"
+                onClick={() => setShowPrintModal(false)}
+              >
+                Batal
+              </button>
+              <button
+                disabled={printSelection.size === 0 || printing}
+                className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold flex items-center gap-1.5"
+                onClick={() => void handlePrintBatch()}
+              >
+                <Printer size={14} /> {printing ? 'Membuat PDF...' : `Cetak (${printSelection.size})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {duplicateTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4" onClick={() => setDuplicateTarget(null)}>

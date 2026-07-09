@@ -1,10 +1,119 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Building2, Layers, DoorOpen, Search } from 'lucide-react';
-import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../api/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, Pencil, Trash2, X, Building2, Layers, DoorOpen, Search, Printer, RefreshCw, MoreVertical } from 'lucide-react';
+import { apiGet, apiPost, apiPatch, apiDelete, ApiError, printQrBatch, regenerateLocationToken } from '../api/client';
 import type { Location, LocationType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../auth/AuthContext';
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+const MENU_WIDTH = 192; // w-48
+
+function LocationActionsMenu({
+  onPrintQr,
+  onRegenerateToken,
+  onDelete,
+}: {
+  onPrintQr: () => void;
+  onRegenerateToken: () => void;
+  onDelete: () => void;
+}) {
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  function openMenu() {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCoords({
+      top: rect.bottom + 4,
+      left: Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8),
+    });
+  }
+
+  useEffect(() => {
+    if (!coords) return;
+    function close() {
+      setCoords(null);
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) {
+        close();
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [coords]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        className="p-2 min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-md text-slate-600"
+        title="Menu lainnya"
+        onClick={() => (coords ? setCoords(null) : openMenu())}
+      >
+        <MoreVertical size={16} />
+      </button>
+      {coords &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-50 bg-white rounded-lg border border-slate-200 shadow-lg p-1.5"
+            style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
+          >
+            <button
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+              onClick={() => {
+                setCoords(null);
+                onPrintQr();
+              }}
+            >
+              <Printer size={13} /> Cetak QR
+            </button>
+            <button
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+              onClick={() => {
+                setCoords(null);
+                onRegenerateToken();
+              }}
+            >
+              <RefreshCw size={13} /> Buat Ulang Token QR
+            </button>
+            <div className="h-px bg-slate-100 my-1" />
+            <button
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md"
+              onClick={() => {
+                setCoords(null);
+                onDelete();
+              }}
+            >
+              <Trash2 size={13} /> Hapus
+            </button>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 const TYPE_LABEL: Record<LocationType, string> = {
   gedung: 'Gedung',
@@ -133,6 +242,32 @@ export default function LocationsPage() {
     }
   }
 
+  async function handlePrintQr(l: Location) {
+    try {
+      const blob = await printQrBatch({ locationIds: [l.id] });
+      downloadBlob(blob, `qr-lokasi-${l.nama.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+    } catch {
+      showToast('Gagal membuat label QR', 'danger');
+    }
+  }
+
+  async function handleRegenerateToken(l: Location) {
+    const ok = await confirmDialog({
+      title: 'Buat Ulang Token QR',
+      message: `Token QR lama untuk "${l.nama}" tidak akan berlaku lagi. Cetak label baru setelah ini.`,
+      confirmLabel: 'Buat Ulang',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await regenerateLocationToken(l.id);
+      showToast('Token QR berhasil dibuat ulang, cetak label baru');
+      load();
+    } catch {
+      showToast('Gagal membuat ulang token QR', 'danger');
+    }
+  }
+
   async function handleDelete(l: Location) {
     const ok = await confirmDialog({
       title: 'Hapus Lokasi',
@@ -165,14 +300,14 @@ export default function LocationsPage() {
             </span>
           </div>
           {canManage && (
-            <div className="flex gap-1 shrink-0">
+            <div className="flex items-center gap-0.5 shrink-0">
               {node.tipe !== 'ruangan' && (
                 <button
                   className="p-2 min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-md text-slate-600"
                   title={`Tambah ${node.tipe === 'gedung' ? 'Lantai' : 'Ruangan'} di sini`}
                   onClick={() => openCreate(node.tipe === 'gedung' ? 'lantai' : 'ruangan', node.id)}
                 >
-                  <Plus size={14} />
+                  <Plus size={16} />
                 </button>
               )}
               <button
@@ -180,15 +315,13 @@ export default function LocationsPage() {
                 title="Ubah"
                 onClick={() => openEdit(node)}
               >
-                <Pencil size={14} />
+                <Pencil size={16} />
               </button>
-              <button
-                className="p-2 min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-md text-slate-600"
-                title="Hapus"
-                onClick={() => handleDelete(node)}
-              >
-                <Trash2 size={14} />
-              </button>
+              <LocationActionsMenu
+                onPrintQr={() => void handlePrintQr(node)}
+                onRegenerateToken={() => void handleRegenerateToken(node)}
+                onDelete={() => void handleDelete(node)}
+              />
             </div>
           )}
         </div>
@@ -214,8 +347,8 @@ export default function LocationsPage() {
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Lokasi</h1>
           <p className="text-[11px] sm:text-xs text-slate-500">Hierarki Gedung → Lantai → Ruangan untuk penempatan aset.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 min-h-11 w-full sm:w-64">
+        <div className="flex gap-2 sm:items-center">
+          <div className="flex items-center gap-2 border border-transparent sm:border-slate-200 rounded-full sm:rounded-lg px-3.5 sm:px-3 min-h-11 flex-1 sm:w-64 bg-slate-100 sm:bg-white focus-within:bg-white focus-within:border-slate-300 transition-colors">
             <Search size={15} className="text-slate-400 shrink-0" />
             <input
               type="text"
@@ -227,7 +360,7 @@ export default function LocationsPage() {
           </div>
           {canManage && (
             <button
-              className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center justify-center gap-1.5"
+              className="btn-primary px-3 rounded-full sm:rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 shrink-0 flex items-center justify-center gap-1.5"
               onClick={() => openCreate('gedung')}
             >
               <Plus size={14} /> Gedung Baru

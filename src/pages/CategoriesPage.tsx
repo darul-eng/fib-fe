@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Search, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../api/client';
 import type { Category, CategoryFieldInput, FieldType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
@@ -17,7 +17,7 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
 type FieldRow = CategoryFieldInput & { _rowId: number };
 let rowSeq = 0;
 function newFieldRow(): FieldRow {
-  return { _rowId: ++rowSeq, label: '', key: '', tipe: 'text', wajib: false, opsi: [] };
+  return { _rowId: ++rowSeq, label: '', key: '', tipe: 'text', wajib: false, isPublic: true, opsi: [] };
 }
 
 function slugify(label: string) {
@@ -96,6 +96,7 @@ export default function CategoriesPage() {
         key: f.key,
         tipe: f.tipe,
         wajib: f.wajib,
+        isPublic: f.isPublic,
         opsi: f.opsi ?? [],
       })),
     );
@@ -127,6 +128,7 @@ export default function CategoriesPage() {
           key: f.key || slugify(f.label),
           tipe: f.tipe,
           wajib: f.wajib ?? false,
+          isPublic: f.isPublic ?? true,
           opsi: f.tipe === 'select' ? f.opsi : undefined,
         })),
       };
@@ -262,7 +264,7 @@ export default function CategoriesPage() {
                 {fields.map((f) => (
                   <div
                     key={f._rowId}
-                    className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-2 items-center"
+                    className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto_auto] gap-2 items-center"
                   >
                     <input
                       className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
@@ -291,6 +293,18 @@ export default function CategoriesPage() {
                       />
                       Wajib
                     </label>
+                    <label
+                      className="flex items-center gap-1.5 text-[11px] text-slate-600 whitespace-nowrap min-h-11"
+                      title="Tampil di halaman publik (scan QR) — matikan untuk data sensitif (mis. Serial Number)"
+                    >
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        checked={f.isPublic ?? true}
+                        onChange={(e) => updateField(f._rowId, { isPublic: e.target.checked })}
+                      />
+                      Publik
+                    </label>
                     <button
                       type="button"
                       className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center justify-self-start"
@@ -300,7 +314,7 @@ export default function CategoriesPage() {
                     </button>
                     {f.tipe === 'select' && (
                       <input
-                        className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11 sm:col-span-4"
+                        className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11 sm:col-span-5"
                         placeholder="Opsi, pisahkan dengan koma (mis. 4 GB, 8 GB, 16 GB)"
                         value={(f.opsi ?? []).join(', ')}
                         onChange={(e) =>
@@ -370,7 +384,12 @@ export default function CategoriesPage() {
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {c.fields.map((f) => (
-                  <span key={f.id} className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase">
+                  <span
+                    key={f.id}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase"
+                    title={f.isPublic ? 'Tampil di halaman publik' : 'Disembunyikan dari halaman publik'}
+                  >
+                    {!f.isPublic && <Lock size={9} />}
                     {f.label}
                     {f.wajib ? '*' : ''}
                   </span>

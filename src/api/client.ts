@@ -37,6 +37,17 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}/api${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  return res.json() as Promise<T>;
+}
+
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE}/api${path}`, {
     method: 'PATCH',
@@ -80,6 +91,7 @@ export type CategoryField = {
   key: string;
   tipe: FieldType;
   wajib: boolean;
+  isPublic: boolean;
   opsi: string[] | null;
 };
 
@@ -95,6 +107,7 @@ export type CategoryFieldInput = {
   key: string;
   tipe: FieldType;
   wajib?: boolean;
+  isPublic?: boolean;
   opsi?: string[];
 };
 
@@ -288,4 +301,86 @@ export function listMovements(query: { assetId?: string; page?: number; limit?: 
 
 export function moveAsset(input: MoveAssetInput) {
   return apiPost<{ asset: Asset; movement: Movement }>('/movements', input);
+}
+
+// ---------- QR & Cetak Label (Tahap 4) ----------
+
+export function assetQrPngUrl(id: string) {
+  return `${BASE}/api/qr/assets/${id}/png`;
+}
+
+export function locationQrPngUrl(id: string) {
+  return `${BASE}/api/qr/locations/${id}/png`;
+}
+
+export type PrintQrInput = {
+  assetIds?: string[];
+  locationIds?: string[];
+  columns?: number;
+  size?: 'kecil' | 'sedang';
+};
+
+export async function printQrBatch(input: PrintQrInput): Promise<Blob> {
+  const res = await fetch(`${BASE}/api/qr/print`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  return res.blob();
+}
+
+export function regenerateAssetToken(id: string) {
+  return apiPost<Asset>(`/assets/${id}/regenerate-token`);
+}
+
+export function regenerateLocationToken(id: string) {
+  return apiPost<Location>(`/locations/${id}/regenerate-token`);
+}
+
+// ---------- Halaman Publik (scan QR, tanpa login) ----------
+
+export type PublicMovement = {
+  tipe: MovementType;
+  dari: string | null;
+  ke: string | null;
+  catatan: string | null;
+  createdAt: string;
+};
+
+export type PublicAsset = {
+  kode: string;
+  nama: string;
+  kategori: string;
+  kondisi: AssetCondition;
+  lokasi: string | null;
+  pemegang: string | null;
+  foto: string | null;
+  attributes: { label: string; value: unknown }[];
+  timeline: PublicMovement[];
+};
+
+export type PublicLocationAsset = {
+  kode: string;
+  nama: string;
+  kondisi: AssetCondition;
+  qrToken: string;
+};
+
+export type PublicLocation = {
+  nama: string;
+  tipe: LocationType;
+  lokasiInduk: string | null;
+  totalAset: number;
+  ringkasanKondisi: Partial<Record<AssetCondition, number>>;
+  aset: PublicLocationAsset[];
+};
+
+export function getPublicAsset(token: string) {
+  return apiGet<PublicAsset>(`/public/assets/${token}`);
+}
+
+export function getPublicLocation(token: string) {
+  return apiGet<PublicLocation>(`/public/locations/${token}`);
 }
