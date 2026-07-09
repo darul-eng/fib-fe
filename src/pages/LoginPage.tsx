@@ -44,9 +44,9 @@ export default function LoginPage() {
           >
             S
           </div>
-          <span className="text-sm font-semibold tracking-tight text-primary">SIMAF</span>
+          <span className="text-sm font-semibold tracking-tight text-primary">SIAP</span>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Sistem Manajemen Aset FIB Universitas Hasanuddin</p>
+        <p className="mt-2 text-xs text-slate-500">Sistem Manajeman Aset, Sarana, dan Prasarana</p>
 
         <div className="my-4 border-t border-slate-200" />
 

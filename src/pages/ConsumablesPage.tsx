@@ -61,17 +61,17 @@ export default function ConsumablesPage() {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <span className="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded tracking-wider uppercase">
           FASE 2 — MODUL PERSEDIAAN GUDANG
         </span>
-        <h1 className="text-xl font-bold tracking-tight mt-1">Gudang & Tata Usaha (Barang Habis Pakai)</h1>
-        <p className="text-xs text-slate-500">Mencatat kertas, galon, staples, dan spidol habis pakai. Terkoneksi dengan ledger / kartu stok otomatis.</p>
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight mt-1">Gudang & Tata Usaha (Barang Habis Pakai)</h1>
+        <p className="text-[11px] sm:text-xs text-slate-500">Mencatat kertas, galon, staples, dan spidol habis pakai. Terkoneksi dengan ledger / kartu stok otomatis.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Request Form */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 h-fit">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 h-fit">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 pb-2 border-b border-slate-100">
             Ajukan Permintaan Barang (Form Pemohon)
           </h3>
@@ -136,8 +136,8 @@ export default function ConsumablesPage() {
         {/* Right: Ledger + Approvals */}
         <div className="lg:col-span-2 space-y-6">
           {/* Ledger Cards */}
-          <div className="bg-white p-4 rounded-lg border border-slate-200">
-            <h3 className="text-sm font-bold text-slate-800 mb-3">Kartu Stok (Ledger Saldo Aktif)</h3>
+          <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-3">Kartu Stok (Ledger Saldo Aktif)</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {consumables.map(c => {
                 const low = c.stock <= c.minStock;
@@ -166,9 +166,9 @@ export default function ConsumablesPage() {
           </div>
 
           {/* Approval Flow */}
-          <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-3">
-              <h3 className="text-sm font-bold text-slate-800">Alur Permintaan Aktif (Tata Usaha Panel)</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-800">Alur Permintaan Aktif (Tata Usaha Panel)</h3>
               <span className="text-[10px] text-slate-400">Verifikasi berkas persediaan TU</span>
             </div>
 

@@ -1,4 +1,4 @@
-// Tema dinamis SIMAF.
+// Tema dinamis SIAP.
 // Semua warna UI berasal dari CSS variable (--color-*) di index.css.
 // Modul ini meng-override variable itu saat runtime dari nilai yang tersimpan
 // di backend (GET /api/settings/theme), sehingga admin bisa mengganti warna

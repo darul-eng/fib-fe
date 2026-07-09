@@ -28,7 +28,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-4 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
         <div
           className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-lg"
@@ -37,7 +37,7 @@ export function Header() {
           S
         </div>
         <div>
-          <h1 className="text-sm font-semibold tracking-tight leading-none text-slate-800">SIMAF</h1>
+          <h1 className="text-sm font-semibold tracking-tight leading-none text-slate-800">SIAP</h1>
           <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
             Fakultas Ilmu Budaya
           </span>
