@@ -244,3 +244,48 @@ export function commitAssetImport(rows: AssetInput[]) {
 export function downloadAssetImportTemplate(categoryId?: string) {
   return apiDownload(`/assets/import/template${toQueryString({ categoryId })}`);
 }
+
+export type MovementType = 'lokasi' | 'pemegang' | 'kondisi';
+
+export type Movement = {
+  id: string;
+  assetId: string;
+  tipe: MovementType;
+  fromLocationId: string | null;
+  toLocationId: string | null;
+  fromPersonId: string | null;
+  toPersonId: string | null;
+  fromKondisi: AssetCondition | null;
+  toKondisi: AssetCondition | null;
+  catatan: string | null;
+  createdAt: string;
+  asset: { id: string; kode: string; nama: string };
+  fromLocation: { id: string; nama: string } | null;
+  toLocation: { id: string; nama: string } | null;
+  fromPerson: { id: string; nama: string } | null;
+  toPerson: { id: string; nama: string } | null;
+  movedBy: { id: string; nama: string } | null;
+};
+
+export type MovementListResult = {
+  data: Movement[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type MoveAssetInput = {
+  assetId: string;
+  locationId?: string;
+  holderName?: string;
+  kondisi?: AssetCondition;
+  catatan?: string;
+};
+
+export function listMovements(query: { assetId?: string; page?: number; limit?: number }) {
+  return apiGet<MovementListResult>(`/movements${toQueryString(query)}`);
+}
+
+export function moveAsset(input: MoveAssetInput) {
+  return apiPost<{ asset: Asset; movement: Movement }>('/movements', input);
+}

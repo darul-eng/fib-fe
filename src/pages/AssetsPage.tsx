@@ -281,10 +281,10 @@ export default function AssetsPage() {
 
   return (
     <>
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-800">Manajemen Aset Tetap</h1>
-          <p className="text-xs text-slate-500">Pencatatan data, duplikasi massal, dan atribut kustom per kategori.</p>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Manajemen Aset Tetap</h1>
+          <p className="text-[11px] sm:text-xs text-slate-500">Pencatatan data, duplikasi massal, dan atribut kustom per kategori.</p>
         </div>
 
         <div className="flex flex-wrap gap-2 items-center">
@@ -332,13 +332,13 @@ export default function AssetsPage() {
           </select>
 
           <button
-            className="btn-primary flex items-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold shadow-sm"
+            className="btn-primary flex items-center gap-1.5 min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
             onClick={openCreateForm}
           >
             <Plus size={16} /> Aset Baru
           </button>
           <button
-            className="bg-slate-800 hover:bg-slate-700 text-white flex items-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold shadow-sm"
+            className="bg-slate-800 hover:bg-slate-700 text-white flex items-center gap-1.5 min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
             onClick={() => setShowImport(true)}
           >
             <Download size={16} /> Import
@@ -346,7 +346,7 @@ export default function AssetsPage() {
           <button
             disabled
             title="Cetak QR tersedia di Tahap 4"
-            className="bg-slate-100 text-slate-400 cursor-not-allowed flex items-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold border border-slate-200"
+            className="bg-slate-100 text-slate-400 cursor-not-allowed flex items-center gap-1.5 min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-slate-200"
           >
             <Printer size={16} /> Cetak QR
           </button>
@@ -354,7 +354,7 @@ export default function AssetsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white p-4 rounded-lg border border-slate-200 mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6">
           <div className="flex justify-between items-center pb-2 mb-4 border-b border-slate-100">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               {editingId ? 'Ubah Data Aset' : 'Formulir Pendaftaran Aset Baru'}
@@ -372,7 +372,7 @@ export default function AssetsPage() {
                 value={form.nama}
                 onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))}
                 placeholder="Contoh: ThinkPad T14s"
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
@@ -382,7 +382,7 @@ export default function AssetsPage() {
                 required
                 value={form.categoryId}
                 onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value, attributes: {} }))}
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               >
                 <option value="">Pilih kategori</option>
                 {categories.map((c) => (
@@ -398,7 +398,8 @@ export default function AssetsPage() {
               <select
                 value={form.kondisi}
                 onChange={(e) => setForm((f) => ({ ...f, kondisi: e.target.value as AssetCondition }))}
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                disabled={!!editingId}
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {KONDISI_OPTIONS.map((k) => (
                   <option key={k} value={k}>
@@ -406,6 +407,9 @@ export default function AssetsPage() {
                   </option>
                 ))}
               </select>
+              {editingId && (
+                <p className="text-[11px] text-slate-400">Ubah lewat halaman Mutasi & Riwayat agar tercatat.</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -415,7 +419,7 @@ export default function AssetsPage() {
                 inputMode="numeric"
                 value={form.tahunBeli}
                 onChange={(e) => setForm((f) => ({ ...f, tahunBeli: e.target.value }))}
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
@@ -427,7 +431,7 @@ export default function AssetsPage() {
                 value={form.hargaBeli}
                 onChange={(e) => setForm((f) => ({ ...f, hargaBeli: e.target.value }))}
                 placeholder="Contoh: 14000000"
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
@@ -437,7 +441,7 @@ export default function AssetsPage() {
                 value={form.sumberDana}
                 onChange={(e) => setForm((f) => ({ ...f, sumberDana: e.target.value }))}
                 placeholder="Contoh: APBN"
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
@@ -446,7 +450,8 @@ export default function AssetsPage() {
               <select
                 value={form.locationId}
                 onChange={(e) => setForm((f) => ({ ...f, locationId: e.target.value }))}
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                disabled={!!editingId}
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="">Tidak ditentukan</option>
                 {rooms.map((l) => (
@@ -455,6 +460,9 @@ export default function AssetsPage() {
                   </option>
                 ))}
               </select>
+              {editingId && (
+                <p className="text-[11px] text-slate-400">Ubah lewat halaman Mutasi & Riwayat agar tercatat.</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -463,8 +471,12 @@ export default function AssetsPage() {
                 value={form.holderName}
                 onChange={(e) => setForm((f) => ({ ...f, holderName: e.target.value }))}
                 placeholder="Kosongkan jika milik umum"
-                className="p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
+                disabled={!!editingId}
+                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none disabled:opacity-60 disabled:cursor-not-allowed"
               />
+              {editingId && (
+                <p className="text-[11px] text-slate-400">Ubah lewat halaman Mutasi & Riwayat agar tercatat.</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -525,10 +537,10 @@ export default function AssetsPage() {
             )}
 
             <div className="md:col-span-3 flex justify-end gap-2 pt-2">
-              <button type="button" className="min-h-11 px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600" onClick={() => setShowForm(false)}>
+              <button type="button" className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600" onClick={() => setShowForm(false)}>
                 Batal
               </button>
-              <button type="submit" disabled={saving} className="btn-primary min-h-11 px-4 rounded-lg text-xs font-bold">
+              <button type="submit" disabled={saving} className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold">
                 {saving ? 'Menyimpan...' : 'Simpan Aset'}
               </button>
             </div>
@@ -622,7 +634,7 @@ export default function AssetsPage() {
                   {KONDISI_LABEL[a.kondisi]}
                 </span>
               </div>
-              <p className="text-sm font-bold text-slate-800">{a.nama}</p>
+              <p className="text-xs sm:text-sm font-bold text-slate-800">{a.nama}</p>
               <p className="font-mono text-[10px] text-slate-400">{a.kode}</p>
               <div className="text-xs text-slate-500 mt-2 space-y-0.5">
                 <div>
@@ -671,14 +683,14 @@ export default function AssetsPage() {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="min-h-11 px-3 border border-slate-200 rounded-lg font-semibold disabled:opacity-40"
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg font-semibold disabled:opacity-40"
               >
                 Sebelumnya
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="min-h-11 px-3 border border-slate-200 rounded-lg font-semibold disabled:opacity-40"
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg font-semibold disabled:opacity-40"
               >
                 Berikutnya
               </button>
@@ -690,7 +702,7 @@ export default function AssetsPage() {
       {duplicateTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4" onClick={() => setDuplicateTarget(null)}>
           <div className="bg-white rounded-xl max-w-sm w-full border border-slate-200 p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-slate-800 mb-1">Duplikasi Aset</h3>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-1">Duplikasi Aset</h3>
             <p className="text-xs text-slate-500 mb-4">
               Buat salinan dari &quot;{duplicateTarget.nama}&quot; dengan kode & token QR baru.
             </p>
@@ -701,13 +713,13 @@ export default function AssetsPage() {
               max={100}
               value={duplicateCount}
               onChange={(e) => setDuplicateCount(Math.max(1, Number(e.target.value)))}
-              className="w-full p-2.5 min-h-11 text-base border border-slate-200 rounded-lg outline-none mb-4"
+              className="w-full p-2 sm:p-2.5 min-h-11 text-base border border-slate-200 rounded-lg outline-none mb-4"
             />
             <div className="flex justify-end gap-2">
-              <button className="min-h-11 px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600" onClick={() => setDuplicateTarget(null)}>
+              <button className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600" onClick={() => setDuplicateTarget(null)}>
                 Batal
               </button>
-              <button className="btn-primary min-h-11 px-4 rounded-lg text-xs font-bold" onClick={handleDuplicateConfirm}>
+              <button className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold" onClick={handleDuplicateConfirm}>
                 Duplikasi
               </button>
             </div>
@@ -721,7 +733,7 @@ export default function AssetsPage() {
           onClick={() => setShowImport(false)}
         >
           <div className="bg-white rounded-xl max-w-lg w-full border border-slate-200 p-5 shadow-lg my-8" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-slate-800 mb-1">Import Aset Massal via Excel/CSV</h3>
+            <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-1">Import Aset Massal via Excel/CSV</h3>
             <p className="text-xs text-slate-500 mb-4">
               Unggah file berisi banyak aset sekaligus. Kolom "Kategori" & "Lokasi" harus cocok dengan data yang sudah ada.
             </p>
@@ -767,7 +779,7 @@ export default function AssetsPage() {
 
             <div className="flex gap-2 justify-end">
               <button
-                className="min-h-11 px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600"
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600"
                 onClick={() => {
                   setShowImport(false);
                   setImportFile(null);
@@ -779,7 +791,7 @@ export default function AssetsPage() {
               {!importResult ? (
                 <button
                   disabled={!importFile || importing}
-                  className="btn-primary min-h-11 px-4 rounded-lg text-xs font-bold"
+                  className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold"
                   onClick={handleImportPreview}
                 >
                   {importing ? 'Memproses...' : 'Pratinjau'}
@@ -787,7 +799,7 @@ export default function AssetsPage() {
               ) : (
                 <button
                   disabled={importResult.valid.length === 0 || importing}
-                  className="btn-primary min-h-11 px-4 rounded-lg text-xs font-bold"
+                  className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold"
                   onClick={handleImportCommit}
                 >
                   {importing ? 'Menyimpan...' : `Terapkan Import (${importResult.valid.length})`}
