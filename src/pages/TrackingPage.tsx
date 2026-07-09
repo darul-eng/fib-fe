@@ -43,13 +43,13 @@ export default function TrackingPage() {
 
   return (
     <>
-      <div className="page-header">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="page-title">Pelacakan Perpindahan & Riwayat</h1>
-          <p className="page-subtitle">Mencatat mutasi fisik ruang, pergantian pemegang aset, dan riwayat kondisi otomatis.</p>
+          <h2 className="text-xl font-bold tracking-tight">Pelacakan Perpindahan & Riwayat</h2>
+          <p className="text-xs text-slate-500">Mencatat mutasi fisik ruang, pergantian pemegang aset, dan riwayat kondisi otomatis.</p>
         </div>
         <button
-          className="btn btn-primary"
+          className="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center gap-1.5"
           onClick={() => setShowPanel(v => !v)}
         >
           {showPanel ? <X size={14} /> : null}
@@ -59,71 +59,110 @@ export default function TrackingPage() {
 
       {/* Mutasi Form Panel */}
       {showPanel && (
-        <div className="accordion-form" style={{ maxWidth: 520 }}>
-          <div className="accordion-form__header">
-            <h3 style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
+        <div className="bg-white p-4 rounded-lg border border-slate-200 mb-6 max-w-lg">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-3">
+            <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
               Form Mutasi Aset
             </h3>
-            <button className="btn-icon" onClick={() => setShowPanel(false)}><X size={14} /></button>
+            <button
+              type="button"
+              className="p-2 hover:bg-slate-100 rounded-md text-slate-600 min-h-11 min-w-11 flex items-center justify-center"
+              onClick={() => setShowPanel(false)}
+            >
+              <X size={14} />
+            </button>
           </div>
-          <form style={{ display: 'flex', flexDirection: 'column', gap: 14 }} onSubmit={handleTransfer}>
-            <div className="form-group">
-              <label className="form-label required">Pilih Aset</label>
-              <select className="form-select" value={selectedAssetId} onChange={e => setSelectedAssetId(e.target.value)} required>
+          <form className="flex flex-col gap-3.5" onSubmit={handleTransfer}>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600">Pilih Aset*</label>
+              <select
+                className="p-2 border border-slate-200 rounded-lg outline-none text-base sm:text-xs min-h-11"
+                value={selectedAssetId}
+                onChange={e => setSelectedAssetId(e.target.value)}
+                required
+              >
                 <option value="">-- Pilih Aset --</option>
                 {assets.map(a => (
                   <option key={a.id} value={a.id}>{a.nama} ({a.kode})</option>
                 ))}
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label required">Lokasi Ruangan Baru</label>
-              <select className="form-select" value={newLoc} onChange={e => setNewLoc(e.target.value)}>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600">Lokasi Ruangan Baru*</label>
+              <select
+                className="p-2 border border-slate-200 rounded-lg outline-none text-base sm:text-xs min-h-11"
+                value={newLoc}
+                onChange={e => setNewLoc(e.target.value)}
+              >
                 {rooms.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label required">Nama Pemegang Baru</label>
-              <input className="form-input" placeholder="Contoh: Prof. Siti Aminah"
-                value={newHolder} onChange={e => setNewHolder(e.target.value)} required />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600">Nama Pemegang Baru*</label>
+              <input
+                className="p-2 border border-slate-200 rounded-lg outline-none text-base sm:text-xs min-h-11"
+                placeholder="Contoh: Prof. Siti Aminah"
+                value={newHolder}
+                onChange={e => setNewHolder(e.target.value)}
+                required
+              />
             </div>
-            <div className="form-group">
-              <label className="form-label required">Alasan Perpindahan / Catatan</label>
-              <textarea className="form-textarea" placeholder="Contoh: Penataan ulang meja lab programming"
-                value={notes} onChange={e => setNotes(e.target.value)} required />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-600">Alasan Perpindahan / Catatan*</label>
+              <textarea
+                className="p-2 border border-slate-200 rounded-lg outline-none text-base sm:text-xs h-20"
+                placeholder="Contoh: Penataan ulang meja lab programming"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                required
+              />
             </div>
-            <div className="form-footer">
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowPanel(false)}>Batal</button>
-              <button type="submit" className="btn btn-primary btn-sm">Simpan Mutasi</button>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="px-3 py-1.5 border border-slate-200 rounded text-xs font-semibold text-slate-600 min-h-11"
+                onClick={() => setShowPanel(false)}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="btn-primary px-4 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11"
+              >
+                Simpan Mutasi
+              </button>
             </div>
           </form>
         </div>
       )}
 
       {/* Timeline */}
-      <div className="card">
-        <h3 className="card__title">Log Riwayat Perpindahan Aset Global</h3>
+      <div className="bg-white p-4 rounded-lg border border-slate-200">
+        <h3 className="text-sm font-bold text-slate-800 mb-4">Log Riwayat Perpindahan Aset Global</h3>
         {movements.length === 0 ? (
-          <p style={{ fontSize: 12, color: '#94a3b8' }}>Belum ada riwayat mutasi.</p>
+          <p className="text-xs text-slate-400">Belum ada riwayat mutasi.</p>
         ) : (
-          <div className="timeline">
+          <div className="border-l-2 border-slate-100 pl-4 ml-2 space-y-4">
             {movements.map(m => {
               const asset = assets.find(a => a.id === m.assetId);
               return (
-                <div key={m.id} className="timeline-item">
-                  <span className="timeline-item__date">{m.date}</span>
-                  <p className="timeline-item__title">
+                <div key={m.id} className="relative">
+                  <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-slate-300" />
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide block mb-0.5">
+                    {m.date}
+                  </span>
+                  <p className="text-xs font-bold text-slate-800">
                     {asset?.nama ?? 'Aset'}{' '}
-                    <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#94a3b8' }}>
+                    <span className="font-mono text-[10px] text-slate-400 font-normal">
                       ({asset?.kode ?? ''})
                     </span>
                   </p>
-                  <p className="timeline-item__desc">
-                    Mutasi: <strong style={{ color: '#334155' }}>{m.from}</strong>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Mutasi: <strong className="text-slate-700 font-semibold">{m.from}</strong>
                     {' → '}
-                    <strong style={{ color: '#334155' }}>{m.to}</strong>
+                    <strong className="text-slate-700 font-semibold">{m.to}</strong>
                   </p>
-                  <span className="timeline-item__desc">
+                  <span className="text-[11px] text-slate-500 mt-0.5 block">
                     Alasan: "{m.notes}" · Diinput oleh: {m.by}
                   </span>
                 </div>

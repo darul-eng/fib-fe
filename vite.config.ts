@@ -25,6 +25,8 @@ export default defineConfig({
     proxy: {
       // Proxy /api ke backend saat dev
       '/api': 'http://localhost:3000',
+      // Proxy /uploads ke backend saat dev (foto aset)
+      '/uploads': 'http://localhost:3000',
     },
   },
 });

@@ -1,174 +1,219 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { apiGet, apiPost, ApiError } from '../api/client';
+import type { Theme } from '../theme';
+import { applyTheme, defaultTheme } from '../theme';
 import { showToast } from '../components/ToastContainer';
 
-interface Theme {
+interface Preset {
+  name: string;
+  label: string;
   primary: string;
   primaryDark: string;
-  rgb: string;
+  btnClass: string;
 }
 
-const PRESETS: Record<string, Theme> = {
-  emerald: { primary: '#059669', primaryDark: '#047857', rgb: '5, 150, 105' },
-  slate:   { primary: '#475569', primaryDark: '#334155', rgb: '71, 85, 105' },
-  indigo:  { primary: '#4f46e5', primaryDark: '#4338ca', rgb: '79, 70, 229' },
-};
+const PRESETS: Preset[] = [
+  {
+    name: 'emerald',
+    label: 'Emerald Green',
+    primary: '#059669',
+    primaryDark: '#047857',
+    btnClass: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+  },
+  {
+    name: 'slate',
+    label: 'Slate Neutral',
+    primary: '#475569',
+    primaryDark: '#334155',
+    btnClass: 'bg-slate-50 border-slate-200 text-slate-800',
+  },
+  {
+    name: 'indigo',
+    label: 'Indigo Modern',
+    primary: '#4f46e5',
+    primaryDark: '#4338ca',
+    btnClass: 'bg-indigo-50 border-indigo-200 text-indigo-800',
+  },
+];
 
-function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  root.style.setProperty('--color-primary', theme.primary);
-  root.style.setProperty('--color-primary-dark', theme.primaryDark);
-  root.style.setProperty('--color-primary-rgb', theme.rgb);
+const CATEGORY_EXAMPLES: { name: string; fields: number; chipClass: string }[] = [
+  { name: 'Laptop / Komputer', fields: 4, chipClass: 'bg-blue-100 text-blue-800' },
+  { name: 'Mebel / Furnitur', fields: 2, chipClass: 'bg-green-100 text-green-800' },
+  { name: 'Elektronik / AC', fields: 2, chipClass: 'bg-amber-100 text-amber-800' },
+  { name: 'Kendaraan', fields: 2, chipClass: 'bg-pink-100 text-pink-800' },
+];
+
+const HEX_RE = /^#[0-9A-F]{6}$/i;
+
+async function persistTheme(theme: { primary: string; primaryDark: string }, successMessage: string): Promise<void> {
+  try {
+    await apiPost('/settings/theme', theme);
+    showToast(successMessage);
+  } catch (e) {
+    showToast(e instanceof ApiError ? e.message : 'Gagal menyimpan tema', 'danger');
+  }
 }
 
 export default function SettingsPage() {
-  const [colorHex, setColorHex]   = useState('#059669');
+  const [colorHex, setColorHex] = useState(defaultTheme.primary);
   const [ssoEnabled, setSsoEnabled] = useState(false);
 
-  function setPreset(name: string) {
-    const t = PRESETS[name];
-    if (!t) return;
-    applyTheme(t);
-    setColorHex(t.primary);
-    showToast(`Tema sistem diatur ke: ${name}`);
+  useEffect(() => {
+    let cancelled = false;
+    async function init() {
+      applyTheme(defaultTheme);
+      try {
+        const loaded = await apiGet<Partial<Theme>>('/settings/theme');
+        if (cancelled) return;
+        applyTheme(loaded);
+        if (loaded.primary) setColorHex(loaded.primary);
+      } catch {
+        // backend belum siap, tetap pakai default
+      }
+    }
+    void init();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function setPreset(preset: Preset) {
+    applyTheme({ primary: preset.primary, primaryDark: preset.primaryDark });
+    setColorHex(preset.primary);
+    await persistTheme(
+      { primary: preset.primary, primaryDark: preset.primaryDark },
+      `Tema sistem diatur ke: ${preset.label}`,
+    );
   }
 
-  function handleCustomColor(hex: string) {
+  async function handleCustomColor(hex: string) {
     setColorHex(hex);
-    if (/^#[0-9A-F]{6}$/i.test(hex)) {
-      document.documentElement.style.setProperty('--color-primary', hex);
-      document.documentElement.style.setProperty('--color-primary-dark', hex);
-    }
+    if (!HEX_RE.test(hex)) return;
+    applyTheme({ primary: hex, primaryDark: hex });
+    await persistTheme({ primary: hex, primaryDark: hex }, 'Warna tema kustom disimpan');
   }
 
   function toggleSSO(enabled: boolean) {
     setSsoEnabled(enabled);
     showToast(
       enabled ? 'Integrasi Keycloak SSO diaktifkan' : 'Integrasi Keycloak SSO dinonaktifkan',
-      enabled ? 'warning' : 'success'
+      enabled ? 'warning' : 'success',
     );
   }
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Sistem & Pengaturan Tema Dinamis</h1>
-          <p className="page-subtitle">Sesuaikan tema warna primer SIMAF, kelola definisi kategori (JSONB), dan konfigurasi Keycloak SSO.</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight text-slate-800">Sistem &amp; Pengaturan Tema Dinamis</h1>
+        <p className="text-xs text-slate-500">
+          Sesuaikan tema warna primer SIMAF, kelola definisi kategori (JSONB), dan konfigurasi Keycloak SSO.
+        </p>
       </div>
 
-      <div className="grid-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Theme Settings */}
-        <div className="card">
-          <h3 className="card__title">Warna Tema Fakultas Dinamis</h3>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16, marginTop: -8 }}>
-            Ubah warna primer sistem secara real-time. Perubahan disimpan dalam memori browser
-            dan merender ulang CSS variables runtime.
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <h3 className="text-sm font-bold text-slate-800 mb-3">Warna Tema Fakultas Dinamis</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Ubah warna primer sistem secara real-time. Perubahan disimpan ke server dan
+            merender ulang CSS variables runtime.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="flex flex-col gap-5">
             <div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 8 }}>
-                Pilih Preset Tema Utama:
-              </span>
-              <div className="theme-preset-btns">
-                <button className="theme-preset-btn theme-btn-emerald" onClick={() => setPreset('emerald')}>
-                  Emerald Green
-                </button>
-                <button className="theme-preset-btn theme-btn-slate" onClick={() => setPreset('slate')}>
-                  Slate Neutral
-                </button>
-                <button className="theme-preset-btn theme-btn-indigo" onClick={() => setPreset('indigo')}>
-                  Indigo Modern
-                </button>
+              <span className="block text-xs font-semibold text-slate-600 mb-2">Pilih Preset Tema Utama:</span>
+              <div className="flex flex-wrap gap-2">
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    className={`min-h-11 px-3 py-2 border rounded-lg font-bold text-xs ${preset.btnClass}`}
+                    onClick={() => void setPreset(preset)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 8 }}>
-                Atur Custom Color Palette (Hex):
-              </span>
-              <div className="color-picker-row">
+              <span className="block text-xs font-semibold text-slate-600 mb-2">Atur Custom Color Palette (Hex):</span>
+              <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={colorHex}
-                  onChange={e => handleCustomColor(e.target.value)}
+                  onChange={(e) => void handleCustomColor(e.target.value)}
+                  className="w-11 h-11 p-0 border border-slate-300 rounded cursor-pointer"
                 />
                 <input
                   type="text"
                   value={colorHex}
-                  onChange={e => handleCustomColor(e.target.value)}
+                  onChange={(e) => void handleCustomColor(e.target.value)}
                   placeholder="#059669"
+                  className="min-h-11 text-base sm:text-xs p-2 border border-slate-300 rounded-lg w-32 outline-none"
                 />
               </div>
             </div>
 
             {/* Live preview */}
-            <div style={{
-              padding: 12,
-              borderRadius: 8,
-              background: 'rgba(var(--color-primary-rgb), 0.08)',
-              border: '1px solid rgba(var(--color-primary-rgb), 0.2)',
-              fontSize: 12,
-              color: 'var(--color-primary)',
-              fontWeight: 600,
-            }}>
-              ✓ Preview warna aktif: warna tombol, sidebar aktif, dan aksen akan mengikuti pilihan ini.
+            <div
+              className="p-3 rounded-lg text-xs font-semibold text-primary"
+              style={{
+                background: 'rgba(var(--color-primary-rgb), 0.08)',
+                border: '1px solid rgba(var(--color-primary-rgb), 0.2)',
+              }}
+            >
+              Preview warna aktif: warna tombol, sidebar aktif, dan aksen akan mengikuti pilihan ini.
             </div>
           </div>
         </div>
 
         {/* SSO Config */}
-        <div className="card">
-          <h3 className="card__title">SSO Keycloak Universitas Config</h3>
-          <span className="section-badge section-badge-amber" style={{ marginTop: -8, marginBottom: 12 }}>
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <h3 className="text-sm font-bold text-slate-800 mb-1">SSO Keycloak Universitas Config</h3>
+          <span className="inline-block text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mb-2">
             Tahap Akhir (Koordinasi Rektorat)
           </span>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16, marginTop: 8 }}>
+          <p className="text-xs text-slate-500 mb-4">
             Simulasi integrasi portal Single Sign-On Kampus Pusat dengan OAuth2/OIDC mapping.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="sso-toggle-row">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
               <div>
-                <p className="sso-toggle-row__title">Aktifkan Login SSO Keycloak</p>
-                <p className="sso-toggle-row__desc">Menyediakan tombol login OAuth2 di portal depan.</p>
+                <p className="text-xs font-semibold text-slate-800">Aktifkan Login SSO Keycloak</p>
+                <p className="text-[11px] text-slate-500">Menyediakan tombol login OAuth2 di portal depan.</p>
               </div>
-              <input
-                type="checkbox"
-                checked={ssoEnabled}
-                onChange={e => toggleSSO(e.target.checked)}
-                style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--color-primary)' }}
-              />
+              <label className="min-h-11 min-w-11 flex items-center justify-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={ssoEnabled}
+                  onChange={(e) => toggleSSO(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                  style={{ accentColor: 'var(--color-primary)' }}
+                />
+              </label>
             </div>
 
             {ssoEnabled && (
-              <div style={{
-                padding: 14,
-                background: '#eff6ff',
-                borderRadius: 8,
-                border: '1px solid #bfdbfe',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-              }}>
-                <div className="form-group">
-                  <label className="form-label">Keycloak Auth Server Endpoint URL</label>
+              <div className="p-3.5 bg-blue-50 rounded-lg border border-blue-200 flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Keycloak Auth Server Endpoint URL</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="min-h-11 text-base sm:text-xs w-full p-2 border border-slate-200 rounded-lg"
                     defaultValue="https://sso.unhas.ac.id/auth"
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Realm Name & Client ID</label>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Realm Name &amp; Client ID</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="min-h-11 text-base sm:text-xs w-full p-2 border border-slate-200 rounded-lg"
                     defaultValue="realm-mipa-siaf"
                   />
                 </div>
-                <p style={{ fontSize: 10, color: '#64748b', margin: 0 }}>
+                <p className="text-[10px] text-slate-500 m-0">
                   *Sesuai panduan integrasi SSO Universitas — Koordinasi dengan UPT TIK Pusat.
                 </p>
               </div>
@@ -177,35 +222,21 @@ export default function SettingsPage() {
         </div>
 
         {/* Categories Config (info panel) */}
-        <div className="card" style={{ gridColumn: '1 / -1' }}>
-          <h3 className="card__title">Manajemen Kategori Aset (JSONB Fields)</h3>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16, marginTop: -8 }}>
+        <div className="bg-white p-4 rounded-lg border border-slate-200 lg:col-span-2">
+          <h3 className="text-sm font-bold text-slate-800 mb-1">Manajemen Kategori Aset (JSONB Fields)</h3>
+          <p className="text-xs text-slate-500 mb-4">
             Definisi kategori dan custom fields tersimpan dalam format JSONB di database.
             Setiap kategori memiliki fields yang fleksibel (teks, angka, select).
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {[
-              { name: 'Laptop / Komputer', fields: 4, color: '#dbeafe', text: '#1e40af' },
-              { name: 'Mebel / Furnitur',  fields: 2, color: '#f0fdf4', text: '#166534' },
-              { name: 'Elektronik / AC',   fields: 2, color: '#fef3c7', text: '#92400e' },
-              { name: 'Kendaraan',         fields: 2, color: '#fce7f3', text: '#9d174d' },
-            ].map(cat => (
-              <div key={cat.name} style={{
-                padding: '8px 14px',
-                borderRadius: 8,
-                background: cat.color,
-                color: cat.text,
-                fontSize: 12,
-                fontWeight: 600,
-              }}>
+          <div className="flex flex-wrap gap-2.5">
+            {CATEGORY_EXAMPLES.map((cat) => (
+              <div key={cat.name} className={`px-3.5 py-2 rounded-lg text-xs font-semibold ${cat.chipClass}`}>
                 {cat.name}
-                <span style={{ marginLeft: 8, fontWeight: 400, opacity: 0.7, fontSize: 11 }}>
-                  ({cat.fields} fields)
-                </span>
+                <span className="ml-2 font-normal opacity-70 text-[11px]">({cat.fields} fields)</span>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, marginBottom: 0 }}>
+          <p className="text-[11px] text-slate-400 mt-3 mb-0">
             Pengelolaan kategori melalui halaman admin backend. Perubahan fields akan otomatis tercermin pada form tambah aset.
           </p>
         </div>

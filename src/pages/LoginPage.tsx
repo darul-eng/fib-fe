@@ -34,27 +34,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 p-6 shadow-lg">
         {/* Logo */}
-        <div className="login-logo">
-          <div className="login-logo__icon">S</div>
-          <span className="login-logo__name">SIMAF</span>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-lg"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+          >
+            S
+          </div>
+          <span className="text-sm font-semibold tracking-tight text-primary">SIMAF</span>
         </div>
-        <p className="login-tagline">Sistem Manajemen Aset FIB Universitas Hasanuddin</p>
+        <p className="mt-2 text-xs text-slate-500">Sistem Manajemen Aset FIB Universitas Hasanuddin</p>
 
-        <div className="login-divider" />
+        <div className="my-4 border-t border-slate-200" />
 
         {/* Form */}
-        <form className="login-form" onSubmit={handleSubmit}>
-          {error && <div className="login-error">{error}</div>}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg p-3">{error}</div>
+          )}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="login-username">Username / NIP</label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="login-username">
+              Username / NIP
+            </label>
             <input
               id="login-username"
               type="text"
-              className="form-input"
+              className="w-full min-h-11 p-2 text-base border border-slate-200 rounded-lg"
               placeholder="Masukkan username..."
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -63,28 +72,25 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="login-password">Password</label>
-            <div style={{ position: 'relative' }}>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1" htmlFor="login-password">
+              Password
+            </label>
+            <div className="relative">
               <input
                 id="login-password"
                 type={showPass ? 'text' : 'password'}
-                className="form-input"
+                className="w-full min-h-11 p-2 pr-11 text-base border border-slate-200 rounded-lg"
                 placeholder="Masukkan password..."
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                style={{ paddingRight: 42 }}
               />
               <button
                 type="button"
-                className="btn-icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-md"
                 onClick={() => setShowPass(!showPass)}
-                style={{
-                  position: 'absolute', right: 6, top: '50%',
-                  transform: 'translateY(-50%)', padding: 6,
-                }}
                 title={showPass ? 'Sembunyikan' : 'Tampilkan'}
               >
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -94,31 +100,36 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="login-submit"
+            className="btn-primary w-full min-h-11 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             disabled={loading}
-            style={loading ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
           >
             {loading ? (
               'Memverifikasi...'
             ) : (
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <>
                 <LogIn size={16} /> Masuk ke Sistem
-              </span>
+              </>
             )}
           </button>
 
-          <div className="login-divider" style={{ margin: '4px 0' }} />
+          <div className="my-1 border-t border-slate-200" />
 
           {/* SSO Button — Tahap 8, belum tersedia */}
-          <button type="button" className="login-sso-btn" disabled title="Menyusul di Tahap 8">
-            <ShieldCheck size={16} color="#059669" />
+          <button
+            type="button"
+            className="w-full min-h-11 flex items-center justify-center gap-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-400 bg-slate-50 cursor-not-allowed"
+            disabled
+            title="Menyusul di Tahap 8"
+          >
+            <ShieldCheck size={16} className="text-slate-400" />
             Masuk via SSO Universitas (Keycloak)
           </button>
         </form>
 
-        <p className="login-footer">
-          Sistem Manajemen Aset FIB · v1.0.0-alpha<br />
-          <span style={{ color: '#cbd5e1' }}>©2026 Fakultas Ilmu Budaya Universitas Hasanuddin</span>
+        <p className="text-center text-[11px] text-slate-400 mt-6">
+          Sistem Manajemen Aset FIB · v1.0.0-alpha
+          <br />
+          <span className="text-slate-300">©2026 Fakultas Ilmu Budaya Universitas Hasanuddin</span>
         </p>
       </div>
     </div>

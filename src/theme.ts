@@ -48,12 +48,23 @@ const VAR: Record<keyof Theme, string> = {
   bg: '--color-bg',
 };
 
+function hexToRgbTriplet(hex: string): string | null {
+  const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!match) return null;
+  const [, r, g, b] = match;
+  return `${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}`;
+}
+
 export function applyTheme(theme: Partial<Theme>) {
   const root = document.documentElement;
   (Object.keys(VAR) as (keyof Theme)[]).forEach((k) => {
     const val = theme[k];
     if (val) root.style.setProperty(VAR[k], val);
   });
+  if (theme.primary) {
+    const rgb = hexToRgbTriplet(theme.primary);
+    if (rgb) root.style.setProperty('--color-primary-rgb', rgb);
+  }
   if (theme.bg) document.body.style.background = theme.bg;
 }
 
