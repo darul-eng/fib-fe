@@ -209,10 +209,10 @@ export default function LocationsPage() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-800">Lokasi</h1>
-          <p className="text-xs text-slate-500">Hierarki Gedung → Lantai → Ruangan untuk penempatan aset.</p>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Lokasi</h1>
+          <p className="text-[11px] sm:text-xs text-slate-500">Hierarki Gedung → Lantai → Ruangan untuk penempatan aset.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 min-h-11 w-full sm:w-64">
@@ -227,7 +227,7 @@ export default function LocationsPage() {
           </div>
           {canManage && (
             <button
-              className="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center justify-center gap-1.5"
+              className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center justify-center gap-1.5"
               onClick={() => openCreate('gedung')}
             >
               <Plus size={14} /> Gedung Baru
@@ -237,7 +237,7 @@ export default function LocationsPage() {
       </div>
 
       {canManage && showForm && (
-        <div className="bg-white p-4 rounded-lg border border-slate-200 mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="m-0 text-[11px] font-bold uppercase tracking-wide text-slate-500">
               {editingId ? 'Ubah Lokasi' : 'Lokasi Baru'}
@@ -293,14 +293,14 @@ export default function LocationsPage() {
             <div className="sm:col-span-2 flex justify-end gap-2">
               <button
                 type="button"
-                className="px-3 py-1.5 border border-slate-200 rounded text-xs font-semibold text-slate-600 min-h-11"
+                className="px-2.5 py-1.5 sm:px-3 border border-slate-200 rounded text-xs font-semibold text-slate-600 min-h-11"
                 onClick={closeForm}
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11"
+                className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11"
                 disabled={saving}
               >
                 {saving ? 'Menyimpan...' : 'Simpan Lokasi'}

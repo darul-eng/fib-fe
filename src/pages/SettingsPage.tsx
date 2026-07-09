@@ -103,17 +103,17 @@ export default function SettingsPage() {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-slate-800">Sistem &amp; Pengaturan Tema Dinamis</h1>
-        <p className="text-xs text-slate-500">
-          Sesuaikan tema warna primer SIMAF, kelola definisi kategori (JSONB), dan konfigurasi Keycloak SSO.
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Sistem &amp; Pengaturan Tema Dinamis</h1>
+        <p className="text-[11px] sm:text-xs text-slate-500">
+          Sesuaikan tema warna primer SIAP, kelola definisi kategori (JSONB), dan konfigurasi Keycloak SSO.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Theme Settings */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <h3 className="text-sm font-bold text-slate-800 mb-3">Warna Tema Fakultas Dinamis</h3>
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-3">Warna Tema Fakultas Dinamis</h3>
           <p className="text-xs text-slate-500 mb-4">
             Ubah warna primer sistem secara real-time. Perubahan disimpan ke server dan
             merender ulang CSS variables runtime.
@@ -127,7 +127,7 @@ export default function SettingsPage() {
                   <button
                     key={preset.name}
                     type="button"
-                    className={`min-h-11 px-3 py-2 border rounded-lg font-bold text-xs ${preset.btnClass}`}
+                    className={`min-h-11 px-2.5 sm:px-3 py-2 border rounded-lg font-bold text-xs ${preset.btnClass}`}
                     onClick={() => void setPreset(preset)}
                   >
                     {preset.label}
@@ -169,8 +169,8 @@ export default function SettingsPage() {
         </div>
 
         {/* SSO Config */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <h3 className="text-sm font-bold text-slate-800 mb-1">SSO Keycloak Universitas Config</h3>
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-1">SSO Keycloak Universitas Config</h3>
           <span className="inline-block text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mb-2">
             Tahap Akhir (Koordinasi Rektorat)
           </span>
@@ -222,8 +222,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Categories Config (info panel) */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 lg:col-span-2">
-          <h3 className="text-sm font-bold text-slate-800 mb-1">Manajemen Kategori Aset (JSONB Fields)</h3>
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 lg:col-span-2">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-1">Manajemen Kategori Aset (JSONB Fields)</h3>
           <p className="text-xs text-slate-500 mb-4">
             Definisi kategori dan custom fields tersimpan dalam format JSONB di database.
             Setiap kategori memiliki fields yang fleksibel (teks, angka, select).
