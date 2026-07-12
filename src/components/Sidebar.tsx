@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Box, Shuffle, Package, Settings, ChevronLeft, ChevronRight, Tags, MapPin } from 'lucide-react';
+import { Home, Box, Shuffle, Package, Settings, ChevronLeft, ChevronRight, Tags, MapPin, ClipboardCheck } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
   path: string;
+  adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -15,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'locations', label: 'Lokasi', icon: <MapPin size={16} />, path: '/lokasi' },
   { id: 'assets', label: 'Manajemen Aset', icon: <Box size={16} />, path: '/aset' },
   { id: 'tracking', label: 'Mutasi & Riwayat', icon: <Shuffle size={16} />, path: '/mutasi' },
+  { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', adminOnly: true },
   { id: 'consumables', label: 'Persediaan', icon: <Package size={16} />, path: '/persediaan' },
   { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan' },
 ];
@@ -22,7 +25,9 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin');
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebarCollapsed');
@@ -56,7 +61,7 @@ export function Sidebar() {
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = isActive(item.path);
         return (
           <button

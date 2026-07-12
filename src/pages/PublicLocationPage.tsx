@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DoorOpen, ArrowLeft } from 'lucide-react';
 import { getPublicLocation, ApiError } from '../api/client';
-import type { PublicLocation, AssetCondition } from '../api/client';
+import type { PublicLocation, PublicLocationAsset, AssetCondition } from '../api/client';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
 import { useAuth } from '../auth/AuthContext';
 
@@ -10,21 +10,44 @@ export default function PublicLocationPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [location, setLocation] = useState<PublicLocation | null>(null);
+  // `meta` = nama/lokasiInduk/ringkasanKondisi/totalAset (dihitung dari seluruh aset,
+  // sama di setiap halaman); `assets` menumpuk tiap kali "Muat Lagi" ditekan.
+  const [meta, setMeta] = useState<PublicLocation | null>(null);
+  const [assets, setAssets] = useState<PublicLocationAsset[]>([]);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     setLoading(true);
     setNotFound(false);
-    getPublicLocation(token)
-      .then(setLocation)
+    setPage(1);
+    setAssets([]);
+    getPublicLocation(token, 1)
+      .then((res) => {
+        setMeta(res);
+        setAssets(res.aset);
+      })
       .catch((e) => {
         if (e instanceof ApiError && e.status === 404) setNotFound(true);
       })
       .finally(() => setLoading(false));
   }, [token]);
+
+  function loadMore() {
+    if (!token) return;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    getPublicLocation(token, nextPage)
+      .then((res) => {
+        setAssets((prev) => [...prev, ...res.aset]);
+        setPage(nextPage);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -59,7 +82,7 @@ export default function PublicLocationPage() {
           </div>
         )}
 
-        {!loading && location && (
+        {!loading && meta && (
           <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
             <div className="mb-3 flex items-start gap-2">
               <DoorOpen size={18} className="text-slate-400 mt-0.5 shrink-0" />
@@ -67,17 +90,17 @@ export default function PublicLocationPage() {
                 <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-bold uppercase text-slate-600">
                   Ruangan
                 </span>
-                <h2 className="text-md font-bold mt-1 text-slate-800">{location.nama}</h2>
-                {location.lokasiInduk && <p className="text-xs text-slate-500 mt-0.5">{location.lokasiInduk}</p>}
+                <h2 className="text-md font-bold mt-1 text-slate-800">{meta.nama}</h2>
+                {meta.lokasiInduk && <p className="text-xs text-slate-500 mt-0.5">{meta.lokasiInduk}</p>}
               </div>
             </div>
 
             <div className="bg-slate-50 p-2.5 rounded text-xs mb-4 flex justify-between items-center flex-wrap gap-1.5">
               <span>
-                Total Terdaftar: <strong className="text-slate-800">{location.totalAset} Aset</strong>
+                Total Terdaftar: <strong className="text-slate-800">{meta.totalAset} Aset</strong>
               </span>
               <div className="flex gap-1.5 flex-wrap">
-                {(Object.entries(location.ringkasanKondisi) as [AssetCondition, number][]).map(([k, v]) => (
+                {(Object.entries(meta.ringkasanKondisi) as [AssetCondition, number][]).map(([k, v]) => (
                   <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${kondisiBadgeClass(k)}`}>
                     {KONDISI_LABEL[k]}: {v}
                   </span>
@@ -85,9 +108,11 @@ export default function PublicLocationPage() {
               </div>
             </div>
 
-            <h3 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Daftar Inventaris Ruang</h3>
+            <h3 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">
+              Daftar Inventaris Ruang ({assets.length}/{meta.totalAset})
+            </h3>
             <div className="space-y-2">
-              {location.aset.map((a) => (
+              {assets.map((a) => (
                 <Link
                   key={a.qrToken}
                   to={`/a/${a.qrToken}`}
@@ -102,10 +127,20 @@ export default function PublicLocationPage() {
                   </span>
                 </Link>
               ))}
-              {location.aset.length === 0 && (
+              {assets.length === 0 && (
                 <p className="text-xs text-slate-400 italic text-center py-4">Tidak ada aset terdaftar di ruangan ini.</p>
               )}
             </div>
+
+            {assets.length < meta.totalAset && (
+              <button
+                className="w-full mt-3 min-h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold disabled:opacity-60"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? 'Memuat...' : 'Muat Lagi'}
+              </button>
+            )}
           </div>
         )}
       </main>

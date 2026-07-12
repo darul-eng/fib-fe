@@ -47,4 +47,13 @@ export default defineConfig({
       '/uploads': 'http://localhost:3000',
     },
   },
+  preview: {
+    port: 4173,
+    // Sama seperti proxy dev di atas — tanpa ini, `vite preview` (build produksi,
+    // dipakai untuk uji nyata PWA/service worker) tidak bisa memanggil backend.
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/uploads': 'http://localhost:3000',
+    },
+  },
 });

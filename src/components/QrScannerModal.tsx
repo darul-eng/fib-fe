@@ -19,7 +19,25 @@ export function QrScannerModal({ open, onClose, onDecode }: Props) {
     if (!open) return;
     setError('');
     let stopped = false;
+    // Jadi true hanya setelah start() benar-benar selesai — start() bersifat async,
+    // jadi cleanup (termasuk double-invoke React StrictMode di dev) bisa terpicu
+    // sebelum kamera sungguh menyala. html5-qrcode melempar exception SINKRON (bukan
+    // promise rejection) kalau stop() dipanggil saat itu, jadi harus dijaga di sini —
+    // tanpa flag ini exception itu lolos dari .catch() dan meng-crash komponen.
+    let started = false;
     const scanner = new Html5Qrcode(READER_ID);
+
+    function safeStop() {
+      if (!started) return;
+      try {
+        scanner
+          .stop()
+          .then(() => scanner.clear())
+          .catch(() => {});
+      } catch {
+        // stop() bisa melempar sinkron bila kamera belum/sudah tidak berjalan
+      }
+    }
 
     scanner
       .start(
@@ -28,16 +46,24 @@ export function QrScannerModal({ open, onClose, onDecode }: Props) {
         (decodedText) => {
           if (stopped) return;
           stopped = true;
-          scanner.stop().then(() => scanner.clear()).catch(() => {});
+          safeStop();
           onDecodeRef.current(decodedText);
         },
         () => {},
       )
-      .catch(() => setError('Tidak bisa mengakses kamera. Periksa izin kamera pada browser.'));
+      .then(() => {
+        started = true;
+        // Komponen sudah di-cleanup sebelum start() selesai (mis. StrictMode dev) —
+        // hentikan lagi supaya kamera tidak terus menyala di belakang layar.
+        if (stopped) safeStop();
+      })
+      .catch(() => {
+        if (!stopped) setError('Tidak bisa mengakses kamera. Periksa izin kamera pada browser.');
+      });
 
     return () => {
       stopped = true;
-      scanner.stop().then(() => scanner.clear()).catch(() => {});
+      safeStop();
     };
   }, [open]);
 

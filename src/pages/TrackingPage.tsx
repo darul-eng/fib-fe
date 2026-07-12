@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, History, MapPin, MessageSquare, Search, Shuffle, User, X } from 'lucide-react';
-import { apiGet, ApiError, getAssetByToken, listAssets, listMovements, moveAsset } from '../api/client';
-import type { Asset, AssetCondition, Location, Movement } from '../api/client';
+import { ApiError, getAssetByToken, listAssets, listMovements, moveAsset } from '../api/client';
+import type { Asset, AssetCondition, Movement } from '../api/client';
 import { showToast } from '../components/ToastContainer';
+import { RoomSelect } from '../components/RoomSelect';
 
 const KONDISI_LABEL: Record<AssetCondition, string> = {
   baik: 'Baik',
@@ -29,7 +30,6 @@ const HISTORY_LIMIT = 50;
 const FIELD_BASE =
   'w-full py-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none text-base sm:text-xs min-h-11';
 const FIELD_CLASS = `${FIELD_BASE} pl-8 pr-2`;
-const SELECT_CLASS = `${FIELD_BASE} pl-8 pr-8 appearance-none`;
 const SELECT_CLASS_PLAIN = `${FIELD_BASE} pl-2 pr-8 appearance-none`;
 
 function MovementEntry({ m }: { m: Movement }) {
@@ -80,7 +80,6 @@ export default function TrackingPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [rooms, setRooms] = useState<Location[]>([]);
 
   const [showPanel, setShowPanel] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -121,12 +120,6 @@ export default function TrackingPage() {
     setPage(1);
     loadAssets();
   }
-
-  useEffect(() => {
-    apiGet<Location[]>('/locations')
-      .then((data) => setRooms(data.filter((l) => l.tipe === 'ruangan')))
-      .catch(() => showToast('Gagal memuat lokasi', 'danger'));
-  }, []);
 
   // Dibuka dari hasil scan QR (Header) — /mutasi?assetToken=... langsung membuka form mutasi terisi.
   useEffect(() => {
@@ -437,14 +430,7 @@ export default function TrackingPage() {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-600">Lokasi Ruangan Baru</label>
-                  <div className="relative">
-                    <MapPin size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <select className={SELECT_CLASS} value={newLoc} onChange={(e) => setNewLoc(e.target.value)}>
-                      <option value="">-- Tidak diubah --</option>
-                      {rooms.map((l) => <option key={l.id} value={l.id}>{l.nama}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
+                  <RoomSelect value={newLoc} onChange={(id) => setNewLoc(id)} placeholder="Kosongkan bila tidak diubah" />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
