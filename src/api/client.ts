@@ -377,6 +377,35 @@ export type PublicLocation = {
   aset: PublicLocationAsset[];
 };
 
+// ---------- Dashboard Pimpinan (Tahap 5) ----------
+
+export type DashboardQuery = {
+  categoryId?: string;
+  locationId?: string;
+  kondisi?: AssetCondition;
+};
+
+export type ConditionCount = { kondisi: AssetCondition; count: number };
+
+export type LocationCount = { locationId: string | null; locationName: string; count: number };
+
+export type DashboardStats = {
+  totalAssets: number;
+  totalValue: number;
+  conditionDistribution: ConditionCount[];
+  needsAttention: number;
+  locationDistribution: LocationCount[];
+  recentMovements: Movement[];
+};
+
+export function getDashboardStats(query: DashboardQuery) {
+  return apiGet<DashboardStats>(`/dashboard/stats${toQueryString(query)}`);
+}
+
+export function downloadDashboardExport(query: DashboardQuery) {
+  return apiDownload(`/dashboard/export${toQueryString(query)}`);
+}
+
 export function getPublicAsset(token: string) {
   return apiGet<PublicAsset>(`/public/assets/${token}`);
 }
