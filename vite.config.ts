@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// PWA sudah disiapkan sejak awal (fitur MVP). Ikon bisa ditambah nanti di /public.
 export default defineConfig({
   plugins: [
     react(),
@@ -16,7 +15,26 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
-        icons: [],
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // Data dari /api bersifat sesi/cookie & harus selalu segar — jangan pernah dicache.
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\//,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^\/uploads\//,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'uploads-cache' },
+          },
+        ],
       },
     }),
   ],
@@ -26,6 +44,15 @@ export default defineConfig({
       // Proxy /api ke backend saat dev
       '/api': 'http://localhost:3000',
       // Proxy /uploads ke backend saat dev (foto aset)
+      '/uploads': 'http://localhost:3000',
+    },
+  },
+  preview: {
+    port: 4173,
+    // Sama seperti proxy dev di atas — tanpa ini, `vite preview` (build produksi,
+    // dipakai untuk uji nyata PWA/service worker) tidak bisa memanggil backend.
+    proxy: {
+      '/api': 'http://localhost:3000',
       '/uploads': 'http://localhost:3000',
     },
   },

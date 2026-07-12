@@ -134,6 +134,20 @@ export type LocationInput = {
   parentId?: string;
 };
 
+export type LocationQuery = {
+  search?: string;
+  parentId?: string;
+  tipe?: LocationType;
+  limit?: number;
+};
+
+// GET /locations tanpa parameter = gedung + lantai saja (selalu sedikit).
+// Pakai `search` untuk pemilih ruangan cari-sambil-ketik, atau `parentId` untuk
+// buka-cabang pohon secara lambat (lihat LocationsPage).
+export function listLocations(query: LocationQuery = {}) {
+  return apiGet<Location[]>(`/locations${toQueryString(query)}`);
+}
+
 export type AssetCondition = 'baik' | 'rusak_ringan' | 'rusak_berat' | 'perbaikan' | 'dihapus';
 
 export type Person = {
@@ -236,6 +250,10 @@ export function deleteAsset(id: string) {
 
 export function duplicateAsset(id: string, jumlah: number) {
   return apiPost<Asset[]>(`/assets/${id}/duplicate`, { jumlah });
+}
+
+export function getAssetByToken(token: string) {
+  return apiGet<Asset>(`/assets/by-token/${token}`);
 }
 
 export function uploadAssetPhoto(id: string, file: File) {
@@ -375,6 +393,8 @@ export type PublicLocation = {
   totalAset: number;
   ringkasanKondisi: Partial<Record<AssetCondition, number>>;
   aset: PublicLocationAsset[];
+  page: number;
+  limit: number;
 };
 
 // ---------- Dashboard Pimpinan (Tahap 5) ----------
@@ -410,6 +430,87 @@ export function getPublicAsset(token: string) {
   return apiGet<PublicAsset>(`/public/assets/${token}`);
 }
 
-export function getPublicLocation(token: string) {
-  return apiGet<PublicLocation>(`/public/locations/${token}`);
+export function getPublicLocation(token: string, page = 1) {
+  return apiGet<PublicLocation>(`/public/locations/${token}${toQueryString({ page })}`);
+}
+
+// ---------- Stok Opname / Audit Ruangan (Tahap 7) ----------
+
+export type AuditAssetRef = { id: string; kode: string; nama: string };
+
+export type AuditStatus = 'berjalan' | 'selesai';
+
+export type AuditSessionView = {
+  id: string;
+  locationId: string;
+  locationNama: string;
+  status: AuditStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  catatan: string | null;
+  ditemukan: AuditAssetRef[];
+  belumDicek: AuditAssetRef[];
+  tidakDitemukan: AuditAssetRef[];
+  salahRuangan: { itemId: string; asset: AuditAssetRef }[];
+  belumTerdaftar: { itemId: string; scannedToken: string | null }[];
+};
+
+export type AuditScanResult = AuditSessionView & {
+  lastScan: { result: AuditItemResult; assetNama: string | null };
+};
+
+export type AuditItemResult = 'ditemukan' | 'tidak_ditemukan' | 'salah_ruangan' | 'belum_terdaftar';
+
+export function startAudit(locationId: string) {
+  return apiPost<AuditSessionView>('/audit-sessions', { locationId });
+}
+
+export function getAuditSession(id: string) {
+  return apiGet<AuditSessionView>(`/audit-sessions/${id}`);
+}
+
+export function scanAudit(id: string, token: string) {
+  return apiPost<AuditScanResult>(`/audit-sessions/${id}/scan`, { token });
+}
+
+export function manualCheckAudit(id: string, assetId: string) {
+  return apiPost<AuditSessionView>(`/audit-sessions/${id}/manual`, { assetId });
+}
+
+export function moveHereAudit(id: string, assetId: string) {
+  return apiPost<AuditSessionView>(`/audit-sessions/${id}/move-here`, { assetId });
+}
+
+export function finishAudit(id: string, catatan?: string) {
+  return apiPost<AuditSessionView>(`/audit-sessions/${id}/finish`, { catatan });
+}
+
+// ---------- Riwayat Audit ----------
+
+export type AuditSessionSummary = {
+  id: string;
+  locationId: string;
+  locationNama: string;
+  conductedByNama: string | null;
+  status: AuditStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  counts: Record<AuditItemResult, number>;
+};
+
+export type AuditSessionListResult = {
+  data: AuditSessionSummary[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type AuditSessionQuery = {
+  locationId?: string;
+  page?: number;
+  limit?: number;
+};
+
+export function listAuditSessions(query: AuditSessionQuery = {}) {
+  return apiGet<AuditSessionListResult>(`/audit-sessions${toQueryString(query)}`);
 }

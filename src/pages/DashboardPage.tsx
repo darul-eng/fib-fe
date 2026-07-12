@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Activity, Download, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { apiGet } from '../api/client';
-import type { AssetCondition, Category, DashboardQuery, DashboardStats, Location, Movement } from '../api/client';
+import type { AssetCondition, Category, DashboardQuery, DashboardStats, Movement } from '../api/client';
 import { getDashboardStats, downloadDashboardExport } from '../api/client';
 import { showToast } from '../components/ToastContainer';
+import { RoomSelect } from '../components/RoomSelect';
 import { KONDISI_LABEL } from '../lib/kondisi';
 
 const KONDISI_OPTIONS: AssetCondition[] = ['baik', 'rusak_ringan', 'rusak_berat', 'perbaikan'];
@@ -38,7 +39,6 @@ function movementLabel(m: Movement): string {
 
 export default function DashboardPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [filterKondisi, setFilterKondisi] = useState('');
@@ -48,7 +48,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     apiGet<Category[]>('/categories').then(setCategories).catch(() => showToast('Gagal memuat kategori', 'danger'));
-    apiGet<Location[]>('/locations').then(setLocations).catch(() => showToast('Gagal memuat lokasi', 'danger'));
   }, []);
 
   const query: DashboardQuery = {
@@ -111,16 +110,14 @@ export default function DashboardPage() {
             <option key={c.id} value={c.id}>{c.nama}</option>
           ))}
         </select>
-        <select
-          value={filterLocation}
-          onChange={(e) => setFilterLocation(e.target.value)}
-          className="min-h-11 text-base sm:text-xs p-2 border border-slate-200 rounded-lg bg-white flex-1"
-        >
-          <option value="">Semua Lokasi</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>{l.nama}</option>
-          ))}
-        </select>
+        <div className="flex-1">
+          <RoomSelect
+            value={filterLocation}
+            onChange={(id) => setFilterLocation(id)}
+            placeholder="Semua Lokasi"
+            className="w-full min-h-11 text-base sm:text-xs p-2 pl-8 pr-8 border border-slate-200 rounded-lg bg-white"
+          />
+        </div>
         <select
           value={filterKondisi}
           onChange={(e) => setFilterKondisi(e.target.value)}

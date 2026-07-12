@@ -24,7 +24,6 @@ import type {
   Category,
   FieldType,
   ImportPreviewResult,
-  Location,
 } from '../api/client';
 import {
   listAssets,
@@ -41,6 +40,7 @@ import {
 } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
+import { RoomSelect } from '../components/RoomSelect';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -218,7 +218,6 @@ const EMPTY_FORM: FormState = {
 
 export default function AssetsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -239,6 +238,7 @@ export default function AssetsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingLocationNama, setEditingLocationNama] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -257,12 +257,10 @@ export default function AssetsPage() {
   const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('sedang');
   const [printing, setPrinting] = useState(false);
 
-  const rooms = locations.filter((l) => l.tipe === 'ruangan');
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
 
   useEffect(() => {
     apiGet<Category[]>('/categories').then(setCategories).catch(() => showToast('Gagal memuat kategori', 'danger'));
-    apiGet<Location[]>('/locations').then(setLocations).catch(() => showToast('Gagal memuat lokasi', 'danger'));
   }, []);
 
   useEffect(() => {
@@ -297,6 +295,7 @@ export default function AssetsPage() {
 
   function openCreateForm() {
     setEditingId(null);
+    setEditingLocationNama(null);
     setForm(EMPTY_FORM);
     setPhotoFile(null);
     setShowForm(true);
@@ -304,6 +303,7 @@ export default function AssetsPage() {
 
   function openEditForm(asset: Asset) {
     setEditingId(asset.id);
+    setEditingLocationNama(asset.location?.nama ?? null);
     setForm({
       nama: asset.nama,
       categoryId: asset.categoryId,
@@ -727,19 +727,17 @@ export default function AssetsPage() {
 
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-600">Lokasi Ruang</label>
-              <select
-                value={form.locationId}
-                onChange={(e) => setForm((f) => ({ ...f, locationId: e.target.value }))}
-                disabled={!!editingId}
-                className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <option value="">Tidak ditentukan</option>
-                {rooms.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.nama}
-                  </option>
-                ))}
-              </select>
+              {editingId ? (
+                <p className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-600 flex items-center">
+                  {editingLocationNama ?? 'Tidak ditentukan'}
+                </p>
+              ) : (
+                <RoomSelect
+                  value={form.locationId}
+                  onChange={(id) => setForm((f) => ({ ...f, locationId: id }))}
+                  placeholder="Tidak ditentukan"
+                />
+              )}
               {editingId && (
                 <p className="text-[11px] text-slate-400">Ubah lewat halaman Mutasi & Riwayat agar tercatat.</p>
               )}

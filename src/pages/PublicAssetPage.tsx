@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { ShieldCheck, MapPin, User } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ShieldCheck, MapPin, User, ArrowLeft, Shuffle } from 'lucide-react';
 import { getPublicAsset, ApiError } from '../api/client';
 import type { PublicAsset, MovementType } from '../api/client';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
+import { useAuth } from '../auth/AuthContext';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -15,6 +16,8 @@ const MOVEMENT_TYPE_LABEL: Record<MovementType, string> = {
 
 export default function PublicAssetPage() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [asset, setAsset] = useState<PublicAsset | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -44,6 +47,14 @@ export default function PublicAssetPage() {
           <h1 className="text-sm font-semibold tracking-tight leading-none text-slate-800">SIAP</h1>
           <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Detail Aset Publik</span>
         </div>
+        {user && (
+          <button
+            className="ml-auto min-h-11 flex items-center gap-1 px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-md"
+            onClick={() => navigate('/dashboard')}
+          >
+            <ArrowLeft size={14} /> Kembali
+          </button>
+        )}
       </header>
 
       <main className="flex-1 w-full max-w-lg mx-auto p-4">
@@ -104,6 +115,15 @@ export default function PublicAssetPage() {
               <ShieldCheck size={14} className="mt-0.5 flex-shrink-0" />
               <span>Data sensitif (harga beli, sumber dana) disembunyikan otomatis untuk publik.</span>
             </div>
+
+            {user?.role === 'admin' && token && (
+              <button
+                className="btn-primary w-full min-h-11 mb-4 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm"
+                onClick={() => navigate(`/mutasi?assetToken=${token}`)}
+              >
+                <Shuffle size={14} /> Pindahkan Aset
+              </button>
+            )}
 
             <h3 className="text-xs font-bold text-slate-700 mb-2">Riwayat Perpindahan</h3>
             {asset.timeline.length === 0 ? (

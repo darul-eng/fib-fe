@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { LogOut, Smartphone, ChevronDown } from 'lucide-react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { LogOut, ScanLine, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { showToast } from './ToastContainer';
+
+// Lazy: html5-qrcode cukup besar, hanya dibutuhkan saat scanner benar-benar dibuka.
+const QrScannerModal = lazy(() => import('./QrScannerModal').then((m) => ({ default: m.QrScannerModal })));
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
@@ -12,6 +16,7 @@ export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,6 +30,26 @@ export function Header() {
   async function handleLogout() {
     await logout();
     navigate('/login', { replace: true });
+  }
+
+  function handleScanDecode(text: string) {
+    setShowScanner(false);
+    try {
+      const url = new URL(text, window.location.origin);
+      const assetMatch = url.pathname.match(/^\/a\/(.+)$/);
+      if (assetMatch) {
+        navigate(`/a/${assetMatch[1]}`);
+        return;
+      }
+      const locationMatch = url.pathname.match(/^\/r\/(.+)$/);
+      if (locationMatch) {
+        navigate(`/r/${locationMatch[1]}`);
+        return;
+      }
+    } catch {
+      // bukan URL yang valid, jatuh ke pesan error di bawah
+    }
+    showToast('QR tidak dikenali oleh sistem', 'danger');
   }
 
   return (
@@ -47,10 +72,16 @@ export function Header() {
       <div className="flex items-center gap-1">
         <button
           className="min-h-11 min-w-11 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-md sm:hidden"
-          title="PWA Simulator"
+          title="Pindai QR"
+          onClick={() => setShowScanner(true)}
         >
-          <Smartphone size={20} />
+          <ScanLine size={20} />
         </button>
+        {showScanner && (
+          <Suspense fallback={null}>
+            <QrScannerModal open={showScanner} onClose={() => setShowScanner(false)} onDecode={handleScanDecode} />
+          </Suspense>
+        )}
 
         {user && (
           <div className="relative" ref={menuRef}>
