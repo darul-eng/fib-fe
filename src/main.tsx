@@ -12,6 +12,8 @@ import AssetsPage      from './pages/AssetsPage';
 import TrackingPage    from './pages/TrackingPage';
 import ConsumablesPage from './pages/ConsumablesPage';
 import SettingsPage    from './pages/SettingsPage';
+import PublicAssetPage    from './pages/PublicAssetPage';
+import PublicLocationPage from './pages/PublicLocationPage';
 import { loadTheme }   from './theme';
 import './index.css';
 
@@ -25,6 +27,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Routes>
           {/* Login — standalone, tidak pakai layout */}
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Halaman publik (scan QR) — tanpa login, tanpa layout admin */}
+          <Route path="/a/:token" element={<PublicAssetPage />} />
+          <Route path="/r/:token" element={<PublicLocationPage />} />
 
           {/* Area terkelola — wajib login */}
           <Route element={<RequireAuth />}>

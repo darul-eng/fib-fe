@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet, apiPost, ApiError } from '../api/client';
+import { apiGet, apiPut, ApiError } from '../api/client';
 import type { Theme } from '../theme';
 import { applyTheme, defaultTheme } from '../theme';
 import { showToast } from '../components/ToastContainer';
@@ -47,7 +47,7 @@ const HEX_RE = /^#[0-9A-F]{6}$/i;
 
 async function persistTheme(theme: { primary: string; primaryDark: string }, successMessage: string): Promise<void> {
   try {
-    await apiPost('/settings/theme', theme);
+    await apiPut('/settings/theme', theme);
     showToast(successMessage);
   } catch (e) {
     showToast(e instanceof ApiError ? e.message : 'Gagal menyimpan tema', 'danger');
@@ -57,6 +57,10 @@ async function persistTheme(theme: { primary: string; primaryDark: string }, suc
 export default function SettingsPage() {
   const [colorHex, setColorHex] = useState(defaultTheme.primary);
   const [ssoEnabled, setSsoEnabled] = useState(false);
+
+  const [facultyName, setFacultyName] = useState('');
+  const [savingFaculty, setSavingFaculty] = useState(false);
+  const [showHolder, setShowHolder] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,12 +74,48 @@ export default function SettingsPage() {
       } catch {
         // backend belum siap, tetap pakai default
       }
+      try {
+        const faculty = await apiGet<{ name?: string }>('/settings/faculty');
+        if (!cancelled && faculty.name) setFacultyName(faculty.name);
+      } catch {
+        // belum diatur, pakai default kosong
+      }
+      try {
+        const privacy = await apiGet<{ showHolder?: boolean }>('/settings/public_privacy');
+        if (!cancelled && privacy.showHolder !== undefined) setShowHolder(privacy.showHolder);
+      } catch {
+        // belum diatur, default tampilkan pemegang
+      }
     }
     void init();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  async function handleSaveFaculty(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingFaculty(true);
+    try {
+      await apiPut('/settings/faculty', { name: facultyName });
+      showToast('Nama fakultas disimpan');
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : 'Gagal menyimpan nama fakultas', 'danger');
+    } finally {
+      setSavingFaculty(false);
+    }
+  }
+
+  async function togglePrivacy(next: boolean) {
+    setShowHolder(next);
+    try {
+      await apiPut('/settings/public_privacy', { showHolder: next });
+      showToast(next ? 'Nama pemegang ditampilkan ke publik' : 'Nama pemegang disembunyikan dari publik');
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : 'Gagal menyimpan pengaturan privasi', 'danger');
+      setShowHolder(!next);
+    }
+  }
 
   async function setPreset(preset: Preset) {
     applyTheme({ primary: preset.primary, primaryDark: preset.primaryDark });
@@ -218,6 +258,52 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* QR & Halaman Publik */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 lg:col-span-2">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-1">QR Code &amp; Halaman Publik</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Nama fakultas tampil di label QR yang dicetak. Privasi mengatur apa yang terlihat publik saat aset di-scan.
+          </p>
+
+          <form onSubmit={handleSaveFaculty} className="flex flex-col gap-3 mb-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Fakultas (untuk label QR)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="min-h-11 text-base sm:text-xs flex-1 p-2 border border-slate-200 rounded-lg outline-none"
+                  placeholder="Contoh: Fakultas Ilmu Budaya"
+                  value={facultyName}
+                  onChange={(e) => setFacultyName(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  disabled={savingFaculty}
+                  className="btn-primary min-h-11 px-3 rounded-lg text-xs font-bold shrink-0"
+                >
+                  {savingFaculty ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Tampilkan Nama Pemegang ke Publik</p>
+              <p className="text-[11px] text-slate-500">Jika dimatikan, nama pemegang disembunyikan di halaman scan QR.</p>
+            </div>
+            <label className="min-h-11 min-w-11 flex items-center justify-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showHolder}
+                onChange={(e) => void togglePrivacy(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+                style={{ accentColor: 'var(--color-primary)' }}
+              />
+            </label>
           </div>
         </div>
 
