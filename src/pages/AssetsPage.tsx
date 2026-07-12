@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -217,6 +218,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function AssetsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
@@ -228,11 +230,27 @@ export default function AssetsPage() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterKondisi, setFilterKondisi] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  // Filter lokasi datang dari deep-link (mis. tombol "Lihat Aset" di halaman Lokasi),
+  // bukan dari panel filter kategori/kondisi — makanya disimpan & dibersihkan terpisah.
+  const [filterLocationId, setFilterLocationId] = useState(searchParams.get('locationId') ?? '');
+  const [filterLocationNama, setFilterLocationNama] = useState(searchParams.get('locationNama') ?? '');
   const hasActiveFilter = filterCategory !== '' || filterKondisi !== '';
 
   function resetFilters() {
     setFilterCategory('');
     setFilterKondisi('');
+    setPage(1);
+  }
+
+  function clearLocationFilter() {
+    setFilterLocationId('');
+    setFilterLocationNama('');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('locationId');
+      next.delete('locationNama');
+      return next;
+    });
     setPage(1);
   }
 
@@ -266,7 +284,7 @@ export default function AssetsPage() {
   useEffect(() => {
     void loadAssets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filterCategory, filterKondisi]);
+  }, [page, filterCategory, filterKondisi, filterLocationId]);
 
   async function loadAssets() {
     setLoading(true);
@@ -275,6 +293,7 @@ export default function AssetsPage() {
         search: search || undefined,
         categoryId: filterCategory || undefined,
         kondisi: (filterKondisi as AssetCondition) || undefined,
+        locationId: filterLocationId || undefined,
         page,
         limit,
       });
@@ -499,6 +518,23 @@ export default function AssetsPage() {
           <p className="text-[11px] sm:text-xs text-slate-500">Pencatatan data, duplikasi massal, dan atribut kustom per kategori.</p>
         </div>
 
+        {filterLocationId && (
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="text-[11px] text-slate-500">Lokasi:</span>
+            <span className="inline-flex items-center gap-1 bg-primary-tint text-primary px-2 py-1 rounded-md text-xs font-semibold">
+              {filterLocationNama || 'Terpilih'}
+              <button
+                type="button"
+                title="Hapus filter lokasi"
+                className="hover:opacity-70"
+                onClick={clearLocationFilter}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row lg:items-center gap-2">
           <div className="flex items-center gap-2 lg:flex-1 lg:min-w-0">
             <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-0">
@@ -515,7 +551,7 @@ export default function AssetsPage() {
             <button
               type="button"
               title="Filter"
-              className={`relative shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-full sm:rounded-lg border lg:hidden transition-colors ${
+              className={`relative shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-lg border lg:hidden transition-colors ${
                 hasActiveFilter
                   ? 'border-transparent sm:border-primary bg-primary-tint text-primary'
                   : 'border-transparent sm:border-slate-200 bg-slate-100 sm:bg-white text-slate-500'
@@ -563,14 +599,14 @@ export default function AssetsPage() {
 
           <div className="flex gap-2 lg:shrink-0">
             <button
-              className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-full sm:rounded-lg text-xs font-bold shadow-sm"
+              className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold shadow-sm"
               onClick={openCreateForm}
             >
               <Plus size={16} /> Aset Baru
             </button>
             <button
               title="Import Excel/CSV"
-              className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-full sm:rounded-lg text-xs font-bold shadow-sm"
+              className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
               onClick={() => setShowImport(true)}
             >
               <Download size={16} /> <span className="hidden sm:inline">Import</span>
@@ -578,7 +614,7 @@ export default function AssetsPage() {
             <button
               disabled={assets.length === 0}
               title="Cetak label QR massal"
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-full sm:rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={openPrintModal}
             >
               <Printer size={16} /> <span className="hidden sm:inline">Cetak QR</span>
@@ -623,7 +659,7 @@ export default function AssetsPage() {
             {hasActiveFilter && (
               <button
                 type="button"
-                className="shrink-0 min-h-11 px-3 rounded-xl sm:rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-200"
+                className="shrink-0 min-h-11 px-3 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-200"
                 onClick={resetFilters}
               >
                 Reset

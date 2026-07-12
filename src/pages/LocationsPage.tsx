@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Pencil,
@@ -14,6 +15,7 @@ import {
   MoreVertical,
   ChevronRight,
   ChevronDown,
+  List,
 } from 'lucide-react';
 import { apiPost, apiPatch, apiDelete, ApiError, listLocations, printQrBatch, regenerateLocationToken } from '../api/client';
 import type { Location, LocationType } from '../api/client';
@@ -33,10 +35,14 @@ function downloadBlob(blob: Blob, filename: string) {
 const MENU_WIDTH = 192; // w-48
 
 function LocationActionsMenu({
+  tipe,
+  onListAset,
   onPrintQr,
   onRegenerateToken,
   onDelete,
 }: {
+  tipe: LocationType;
+  onListAset: () => void;
   onPrintQr: () => void;
   onRegenerateToken: () => void;
   onDelete: () => void;
@@ -94,24 +100,38 @@ function LocationActionsMenu({
             className="fixed z-50 bg-white rounded-lg border border-slate-200 shadow-lg p-1.5"
             style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
           >
-            <button
-              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
-              onClick={() => {
-                setCoords(null);
-                onPrintQr();
-              }}
-            >
-              <Printer size={13} /> Cetak QR
-            </button>
-            <button
-              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
-              onClick={() => {
-                setCoords(null);
-                onRegenerateToken();
-              }}
-            >
-              <RefreshCw size={13} /> Buat Ulang Token QR
-            </button>
+            {tipe === 'ruangan' ? (
+              <>
+                <button
+                  className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+                  onClick={() => {
+                    setCoords(null);
+                    onPrintQr();
+                  }}
+                >
+                  <Printer size={13} /> Cetak QR
+                </button>
+                <button
+                  className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+                  onClick={() => {
+                    setCoords(null);
+                    onRegenerateToken();
+                  }}
+                >
+                  <RefreshCw size={13} /> Buat Ulang Token QR
+                </button>
+              </>
+            ) : (
+              <button
+                className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+                onClick={() => {
+                  setCoords(null);
+                  onListAset();
+                }}
+              >
+                <List size={13} /> List Aset
+              </button>
+            )}
             <div className="h-px bg-slate-100 my-1" />
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md"
@@ -166,6 +186,7 @@ function buildTree(upper: Location[]): TreeNode[] {
 
 export default function LocationsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const canManage = user?.role === 'admin';
 
   // Gedung + lantai saja — dasar pohon, selalu dimuat penuh (jumlahnya kecil).
@@ -183,6 +204,7 @@ export default function LocationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nama, setNama] = useState('');
   const [tipe, setTipe] = useState<LocationType>('gedung');
+  const [gedungId, setGedungId] = useState('');
   const [parentId, setParentId] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -252,15 +274,20 @@ export default function LocationsPage() {
   }
 
   const tree = useMemo(() => buildTree(upper), [upper]);
-  const parentOptions = useMemo(
-    () => upper.filter((l) => l.tipe === PARENT_TYPE[tipe]),
-    [upper, tipe],
-  );
+  const gedungOptions = useMemo(() => upper.filter((l) => l.tipe === 'gedung'), [upper]);
+  const parentOptions = useMemo(() => {
+    const options = upper.filter((l) => l.tipe === PARENT_TYPE[tipe]);
+    // Untuk ruangan, pilihan lantai dipersempit ke gedung yang dipilih agar tidak
+    // menampilkan seluruh lantai lintas gedung dalam satu dropdown datar.
+    if (tipe === 'ruangan') return options.filter((l) => l.parentId === gedungId);
+    return options;
+  }, [upper, tipe, gedungId]);
 
-  function openCreate(defaultTipe: LocationType = 'gedung', defaultParentId = '') {
+  function openCreate(defaultTipe: LocationType = 'gedung', defaultParentId = '', defaultGedungId = '') {
     setEditingId(null);
     setNama('');
     setTipe(defaultTipe);
+    setGedungId(defaultGedungId);
     setParentId(defaultParentId);
     setShowForm(true);
   }
@@ -269,6 +296,12 @@ export default function LocationsPage() {
     setEditingId(l.id);
     setNama(l.nama);
     setTipe(l.tipe);
+    if (l.tipe === 'ruangan') {
+      const lantai = upper.find((u) => u.id === l.parentId);
+      setGedungId(lantai?.parentId ?? '');
+    } else {
+      setGedungId('');
+    }
     setParentId(l.parentId ?? '');
     setShowForm(true);
   }
@@ -368,6 +401,8 @@ export default function LocationsPage() {
           <Pencil size={16} />
         </button>
         <LocationActionsMenu
+          tipe={node.tipe}
+          onListAset={() => navigate(`/aset?locationId=${node.id}&locationNama=${encodeURIComponent(node.nama)}`)}
           onPrintQr={() => void handlePrintQr(node)}
           onRegenerateToken={() => void handleRegenerateToken(node)}
           onDelete={() => void handleDelete(node)}
@@ -406,7 +441,7 @@ export default function LocationsPage() {
           {renderActions(
             node,
             `Tambah ${node.tipe === 'gedung' ? 'Lantai' : 'Ruangan'} di sini`,
-            () => openCreate(node.tipe === 'gedung' ? 'lantai' : 'ruangan', node.id),
+            () => openCreate(node.tipe === 'gedung' ? 'lantai' : 'ruangan', node.id, node.tipe === 'lantai' ? node.parentId ?? '' : ''),
           )}
         </div>
         {node.children.map((child) => renderNode(child, depth + 1))}
@@ -472,7 +507,7 @@ export default function LocationsPage() {
           </div>
           {canManage && (
             <button
-              className="btn-primary px-3 rounded-full sm:rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 shrink-0 flex items-center justify-center gap-1.5"
+              className="btn-primary px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 shrink-0 flex items-center justify-center gap-1.5"
               onClick={() => openCreate('gedung')}
             >
               <Plus size={14} /> Gedung Baru
@@ -502,7 +537,7 @@ export default function LocationsPage() {
               <select
                 className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
                 value={tipe}
-                onChange={(e) => { setTipe(e.target.value as LocationType); setParentId(''); }}
+                onChange={(e) => { setTipe(e.target.value as LocationType); setGedungId(''); setParentId(''); }}
               >
                 <option value="gedung">Gedung</option>
                 <option value="lantai">Lantai</option>
@@ -519,18 +554,35 @@ export default function LocationsPage() {
                 onChange={(e) => setNama(e.target.value)}
               />
             </div>
+            {tipe === 'ruangan' && (
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Gedung</label>
+                <select
+                  className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
+                  required
+                  value={gedungId}
+                  onChange={(e) => { setGedungId(e.target.value); setParentId(''); }}
+                >
+                  <option value="" disabled>Pilih Gedung</option>
+                  {gedungOptions.map((g) => <option key={g.id} value={g.id}>{g.nama}</option>)}
+                </select>
+              </div>
+            )}
             {tipe !== 'gedung' && (
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Induk Lokasi ({TYPE_LABEL[PARENT_TYPE[tipe]!]})
                 </label>
                 <select
-                  className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
+                  className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11 disabled:bg-slate-50 disabled:text-slate-400"
                   required
+                  disabled={tipe === 'ruangan' && !gedungId}
                   value={parentId}
                   onChange={(e) => setParentId(e.target.value)}
                 >
-                  <option value="" disabled>Pilih {TYPE_LABEL[PARENT_TYPE[tipe]!]}</option>
+                  <option value="" disabled>
+                    {tipe === 'ruangan' && !gedungId ? 'Pilih gedung dahulu' : `Pilih ${TYPE_LABEL[PARENT_TYPE[tipe]!]}`}
+                  </option>
                   {parentOptions.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
                 </select>
               </div>
