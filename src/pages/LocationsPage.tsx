@@ -16,12 +16,24 @@ import {
   ChevronRight,
   ChevronDown,
   List,
+  Eye,
 } from 'lucide-react';
-import { apiPost, apiPatch, apiDelete, ApiError, listLocations, printQrBatch, regenerateLocationToken } from '../api/client';
-import type { Location, LocationType } from '../api/client';
+import {
+  apiPost,
+  apiPatch,
+  apiDelete,
+  ApiError,
+  listLocations,
+  getLocationAssetCounts,
+  listAssets,
+  printQrBatch,
+  regenerateLocationToken,
+} from '../api/client';
+import type { Asset, Location, LocationType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../auth/AuthContext';
+import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -37,12 +49,14 @@ const MENU_WIDTH = 192; // w-48
 function LocationActionsMenu({
   tipe,
   onListAset,
+  onViewAssets,
   onPrintQr,
   onRegenerateToken,
   onDelete,
 }: {
   tipe: LocationType;
   onListAset: () => void;
+  onViewAssets: () => void;
   onPrintQr: () => void;
   onRegenerateToken: () => void;
   onDelete: () => void;
@@ -102,6 +116,15 @@ function LocationActionsMenu({
           >
             {tipe === 'ruangan' ? (
               <>
+                <button
+                  className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+                  onClick={() => {
+                    setCoords(null);
+                    onViewAssets();
+                  }}
+                >
+                  <Eye size={13} /> Lihat Aset
+                </button>
                 <button
                   className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
                   onClick={() => {
@@ -167,6 +190,132 @@ const PARENT_TYPE: Record<LocationType, LocationType | null> = {
   ruangan: 'lantai',
 };
 
+function AssetCountBadge({ count }: { count: number | undefined }) {
+  if (!count) return null;
+  return (
+    <span className="text-[10px] font-semibold text-slate-400 shrink-0 whitespace-nowrap">
+      {count} aset
+    </span>
+  );
+}
+
+const ROOM_ASSETS_LIMIT = 10;
+
+// Modal daftar aset per ruangan: input pencarian di-debounce 250ms ke `search`
+// (yang juga mereset halaman ke 1); efek pengambilan data bereaksi langsung
+// begitu `search`/`page` menetap, tanpa debounce ganda.
+function RoomAssetsModal({ location, onClose }: { location: Location; onClose: () => void }) {
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setLoading(true);
+    listAssets({ locationId: location.id, search: search || undefined, page, limit: ROOM_ASSETS_LIMIT })
+      .then((res) => {
+        setAssets(res.data);
+        setTotal(res.total);
+      })
+      .catch(() => showToast('Gagal memuat aset ruangan', 'danger'))
+      .finally(() => setLoading(false));
+  }, [location.id, search, page]);
+
+  const totalPages = Math.max(1, Math.ceil(total / ROOM_ASSETS_LIMIT));
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl max-w-lg w-full border border-slate-200 p-5 my-8 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-800 truncate">Aset di {location.nama}</h3>
+            <p className="text-[11px] text-slate-500">{total} aset ditemukan</p>
+          </div>
+          <button
+            className="shrink-0 min-h-11 min-w-11 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-md"
+            onClick={onClose}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="relative mb-3">
+          <Search size={15} className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Cari nama / kode aset..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-9 pr-3 min-h-11 text-base sm:text-xs border border-slate-200 rounded-lg outline-none focus:border-slate-300"
+          />
+        </div>
+
+        <div className="max-h-80 overflow-y-auto border border-slate-100 rounded-lg divide-y divide-slate-100">
+          {loading ? (
+            <p className="text-xs text-slate-400 text-center py-6">Memuat...</p>
+          ) : assets.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-6">Tidak ada aset ditemukan.</p>
+          ) : (
+            assets.map((a) => (
+              <div key={a.id} className="flex items-center justify-between gap-2 p-2.5">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-800 truncate">{a.nama}</p>
+                  <p className="text-[11px] text-slate-500 truncate">{a.kode}</p>
+                </div>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${kondisiBadgeClass(a.kondisi)}`}
+                >
+                  {KONDISI_LABEL[a.kondisi]}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-3 mt-1 text-xs text-slate-500">
+            <span>
+              Halaman {page} dari {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg font-semibold disabled:opacity-40"
+              >
+                Sebelumnya
+              </button>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg font-semibold disabled:opacity-40"
+              >
+                Berikutnya
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type TreeNode = Location & { children: TreeNode[] };
 
 // `upper` hanya berisi gedung + lantai (selalu sedikit) — jadi pohon dua level ini
@@ -212,10 +361,20 @@ export default function LocationsPage() {
   const [searchResults, setSearchResults] = useState<Location[] | null>(null);
   const [searching, setSearching] = useState(false);
 
+  // Jumlah aset per lokasi (gedung/lantai/ruangan, sudah berjenjang dari backend)
+  // untuk badge di tiap baris — dimuat sekali bareng pohon, bukan per-node.
+  const [assetCounts, setAssetCounts] = useState<Record<string, number>>({});
+
+  // Ruangan yang modal daftar asetnya sedang dibuka (null = tertutup).
+  const [assetModalLocation, setAssetModalLocation] = useState<Location | null>(null);
+
   function load() {
     setLoading(true);
-    listLocations()
-      .then(setUpper)
+    Promise.all([listLocations(), getLocationAssetCounts()])
+      .then(([locs, counts]) => {
+        setUpper(locs);
+        setAssetCounts(counts);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }
@@ -403,6 +562,7 @@ export default function LocationsPage() {
         <LocationActionsMenu
           tipe={node.tipe}
           onListAset={() => navigate(`/aset?locationId=${node.id}&locationNama=${encodeURIComponent(node.nama)}`)}
+          onViewAssets={() => setAssetModalLocation(node)}
           onPrintQr={() => void handlePrintQr(node)}
           onRegenerateToken={() => void handleRegenerateToken(node)}
           onDelete={() => void handleDelete(node)}
@@ -437,6 +597,7 @@ export default function LocationsPage() {
             <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
               {TYPE_LABEL[node.tipe]}
             </span>
+            <AssetCountBadge count={assetCounts[node.id]} />
           </div>
           {renderActions(
             node,
@@ -467,6 +628,7 @@ export default function LocationsPage() {
                   <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
                     {TYPE_LABEL.ruangan}
                   </span>
+                  <AssetCountBadge count={assetCounts[room.id]} />
                 </div>
                 {renderActions(room)}
               </div>
@@ -624,6 +786,7 @@ export default function LocationsPage() {
                       <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
                         {TYPE_LABEL[l.tipe]}
                       </span>
+                      <AssetCountBadge count={assetCounts[l.id]} />
                     </div>
                     {l.parent && <p className="text-[11px] text-slate-500 truncate">{l.parent.nama}</p>}
                   </div>
@@ -638,6 +801,10 @@ export default function LocationsPage() {
           tree.map((node) => renderNode(node, 0))
         )}
       </div>
+
+      {assetModalLocation && (
+        <RoomAssetsModal location={assetModalLocation} onClose={() => setAssetModalLocation(null)} />
+      )}
     </>
   );
 }

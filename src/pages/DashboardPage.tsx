@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Activity, Download, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { Activity, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { apiGet } from '../api/client';
 import type { AssetCondition, Category, DashboardQuery, DashboardStats, Movement } from '../api/client';
-import { getDashboardStats, downloadDashboardExport } from '../api/client';
+import { getDashboardStats } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { RoomSelect } from '../components/RoomSelect';
 import { KONDISI_LABEL } from '../lib/kondisi';
@@ -17,15 +17,6 @@ const KONDISI_COLOR: Record<AssetCondition, string> = {
   perbaikan: '#d97706',
   dihapus: '#94a3b8',
 };
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 function formatRupiah(value: number): string {
   return `Rp ${value.toLocaleString('id-ID')}`;
@@ -44,7 +35,6 @@ export default function DashboardPage() {
   const [filterKondisi, setFilterKondisi] = useState('');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     apiGet<Category[]>('/categories').then(setCategories).catch(() => showToast('Gagal memuat kategori', 'danger'));
@@ -65,18 +55,6 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterCategory, filterLocation, filterKondisi]);
 
-  async function handleExport() {
-    setExporting(true);
-    try {
-      const blob = await downloadDashboardExport(query);
-      downloadBlob(blob, 'laporan-aset.xlsx');
-    } catch {
-      showToast('Gagal mengekspor laporan', 'danger');
-    } finally {
-      setExporting(false);
-    }
-  }
-
   const conditionGood = stats?.conditionDistribution.find((c) => c.kondisi === 'baik')?.count ?? 0;
   const pieData =
     stats?.conditionDistribution.map((c) => ({ name: KONDISI_LABEL[c.kondisi], value: c.count, kondisi: c.kondisi })) ?? [];
@@ -84,18 +62,9 @@ export default function DashboardPage() {
   return (
     <>
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <div>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">Ikhtisar Inventaris</h1>
-          <p className="text-[11px] sm:text-xs text-slate-500">Pemantauan sebaran, kondisi fisik, dan nilai buku aset Fakultas.</p>
-        </div>
-        <button
-          className="bg-slate-800 hover:bg-slate-700 text-white min-h-11 flex items-center justify-center gap-1.5 px-3 py-2.5 sm:px-4 rounded-lg text-xs font-bold tracking-wide shadow-sm w-full sm:w-auto disabled:opacity-60"
-          onClick={handleExport}
-          disabled={exporting}
-        >
-          <Download size={16} /> {exporting ? 'Mengekspor...' : 'Ekspor Excel'}
-        </button>
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight">Ikhtisar Inventaris</h1>
+        <p className="text-[11px] sm:text-xs text-slate-500">Pemantauan sebaran, kondisi fisik, dan nilai buku aset Fakultas.</p>
       </div>
 
       {/* Filters */}

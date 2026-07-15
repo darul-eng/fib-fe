@@ -148,6 +148,12 @@ export function listLocations(query: LocationQuery = {}) {
   return apiGet<Location[]>(`/locations${toQueryString(query)}`);
 }
 
+// Jumlah aset per lokasi (gedung/lantai/ruangan, sudah dijumlahkan berjenjang
+// di backend) — dipakai untuk badge jumlah aset di pohon Lokasi.
+export function getLocationAssetCounts() {
+  return apiGet<Record<string, number>>('/locations/asset-counts');
+}
+
 export type AssetCondition = 'baik' | 'rusak_ringan' | 'rusak_berat' | 'perbaikan' | 'dihapus';
 
 export type Person = {

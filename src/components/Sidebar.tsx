@@ -8,7 +8,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   path: string;
-  adminOnly?: boolean;
+  roles?: Array<'admin' | 'pimpinan' | 'developer'>;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -17,9 +17,9 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'locations', label: 'Lokasi', icon: <MapPin size={16} />, path: '/lokasi' },
   { id: 'assets', label: 'Manajemen Aset', icon: <Box size={16} />, path: '/aset' },
   { id: 'tracking', label: 'Mutasi & Riwayat', icon: <Shuffle size={16} />, path: '/mutasi' },
-  { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', adminOnly: true },
+  { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', roles: ['admin'] },
   { id: 'consumables', label: 'Persediaan', icon: <Package size={16} />, path: '/persediaan' },
-  { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan' },
+  { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan', roles: ['developer'] },
 ];
 
 export function Sidebar() {
@@ -27,7 +27,7 @@ export function Sidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-  const items = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin');
+  const items = NAV_ITEMS.filter((item) => !item.roles || (!!user && item.roles.includes(user.role)));
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebarCollapsed');

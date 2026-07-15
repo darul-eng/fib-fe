@@ -6,7 +6,7 @@ export type CurrentUser = {
   nama: string;
   username: string | null;
   email: string | null;
-  role: 'admin' | 'pimpinan';
+  role: 'admin' | 'pimpinan' | 'developer';
 };
 
 type AuthContextValue = {
