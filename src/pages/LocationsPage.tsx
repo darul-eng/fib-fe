@@ -17,6 +17,7 @@ import {
   ChevronDown,
   List,
   Eye,
+  Warehouse,
 } from 'lucide-react';
 import {
   apiPost,
@@ -28,6 +29,7 @@ import {
   listAssets,
   printQrBatch,
   regenerateLocationToken,
+  setLocationWarehouse,
 } from '../api/client';
 import type { Asset, Location, LocationType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
@@ -48,17 +50,21 @@ const MENU_WIDTH = 192; // w-48
 
 function LocationActionsMenu({
   tipe,
+  isWarehouse,
   onListAset,
   onViewAssets,
   onPrintQr,
   onRegenerateToken,
+  onToggleWarehouse,
   onDelete,
 }: {
   tipe: LocationType;
+  isWarehouse: boolean;
   onListAset: () => void;
   onViewAssets: () => void;
   onPrintQr: () => void;
   onRegenerateToken: () => void;
+  onToggleWarehouse: () => void;
   onDelete: () => void;
 }) {
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
@@ -143,6 +149,15 @@ function LocationActionsMenu({
                 >
                   <RefreshCw size={13} /> Buat Ulang Token QR
                 </button>
+                <button
+                  className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
+                  onClick={() => {
+                    setCoords(null);
+                    onToggleWarehouse();
+                  }}
+                >
+                  <Warehouse size={13} /> {isWarehouse ? 'Batalkan sebagai Gudang' : 'Jadikan Gudang'}
+                </button>
               </>
             ) : (
               <button
@@ -183,6 +198,15 @@ const TYPE_ICON: Record<LocationType, React.ReactNode> = {
   lantai: <Layers size={14} />,
   ruangan: <DoorOpen size={14} />,
 };
+
+function WarehouseBadge({ isWarehouse }: { isWarehouse: boolean }) {
+  if (!isWarehouse) return null;
+  return (
+    <span className="flex items-center gap-1 px-1.5 py-0.5 bg-primary-tint text-primary rounded text-[10px] font-bold uppercase shrink-0">
+      <Warehouse size={11} /> Gudang
+    </span>
+  );
+}
 
 const PARENT_TYPE: Record<LocationType, LocationType | null> = {
   gedung: null,
@@ -522,6 +546,16 @@ export default function LocationsPage() {
     }
   }
 
+  async function handleToggleWarehouse(l: Location) {
+    try {
+      await setLocationWarehouse(l.id);
+      showToast(l.isWarehouse ? `"${l.nama}" tidak lagi menjadi Gudang` : `"${l.nama}" dijadikan Gudang`);
+      reloadAll();
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : 'Gagal mengubah status Gudang', 'danger');
+    }
+  }
+
   async function handleDelete(l: Location) {
     const ok = await confirmDialog({
       title: 'Hapus Lokasi',
@@ -561,10 +595,12 @@ export default function LocationsPage() {
         </button>
         <LocationActionsMenu
           tipe={node.tipe}
+          isWarehouse={node.isWarehouse}
           onListAset={() => navigate(`/aset?locationId=${node.id}&locationNama=${encodeURIComponent(node.nama)}`)}
           onViewAssets={() => setAssetModalLocation(node)}
           onPrintQr={() => void handlePrintQr(node)}
           onRegenerateToken={() => void handleRegenerateToken(node)}
+          onToggleWarehouse={() => void handleToggleWarehouse(node)}
           onDelete={() => void handleDelete(node)}
         />
       </div>
@@ -597,6 +633,7 @@ export default function LocationsPage() {
             <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
               {TYPE_LABEL[node.tipe]}
             </span>
+            <WarehouseBadge isWarehouse={node.isWarehouse} />
             <AssetCountBadge count={assetCounts[node.id]} />
           </div>
           {renderActions(
@@ -628,6 +665,7 @@ export default function LocationsPage() {
                   <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
                     {TYPE_LABEL.ruangan}
                   </span>
+                  <WarehouseBadge isWarehouse={room.isWarehouse} />
                   <AssetCountBadge count={assetCounts[room.id]} />
                 </div>
                 {renderActions(room)}
@@ -786,6 +824,7 @@ export default function LocationsPage() {
                       <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
                         {TYPE_LABEL[l.tipe]}
                       </span>
+                      <WarehouseBadge isWarehouse={l.isWarehouse} />
                       <AssetCountBadge count={assetCounts[l.id]} />
                     </div>
                     {l.parent && <p className="text-[11px] text-slate-500 truncate">{l.parent.nama}</p>}

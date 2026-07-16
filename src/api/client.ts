@@ -125,6 +125,7 @@ export type Location = {
   tipe: LocationType;
   parentId: string | null;
   qrToken: string;
+  isWarehouse: boolean;
   parent: { id: string; nama: string; tipe: LocationType } | null;
 };
 
@@ -489,6 +490,24 @@ export function moveHereAudit(id: string, assetId: string) {
 
 export function finishAudit(id: string, catatan?: string) {
   return apiPost<AuditSessionView>(`/audit-sessions/${id}/finish`, { catatan });
+}
+
+// ---------- Menu Warehouse: Scan Masuk/Keluar (Tahap 6) ----------
+
+export function getGudangLocation() {
+  return apiGet<Location | null>('/warehouse/gudang');
+}
+
+export function warehouseMasuk(qrToken: string, catatan?: string) {
+  return apiPost<{ asset: Asset; movement: Movement }>('/warehouse/masuk', { qrToken, catatan });
+}
+
+export function warehouseKeluar(qrToken: string, locationId: string, catatan?: string) {
+  return apiPost<{ asset: Asset; movement: Movement }>('/warehouse/keluar', { qrToken, locationId, catatan });
+}
+
+export function setLocationWarehouse(id: string) {
+  return apiPost<Location>(`/locations/${id}/set-warehouse`);
 }
 
 // ---------- Riwayat Audit ----------

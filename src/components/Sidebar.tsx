@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Box, Shuffle, Package, Settings, ChevronLeft, ChevronRight, Tags, MapPin, ClipboardCheck } from 'lucide-react';
+import { Home, Box, Shuffle, Package, Settings, ChevronLeft, ChevronRight, Tags, MapPin, ClipboardCheck, Warehouse } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 
 interface NavItem {
@@ -8,7 +8,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   path: string;
-  roles?: Array<'admin' | 'pimpinan' | 'developer'>;
+  roles?: Array<'admin' | 'pimpinan' | 'developer' | 'warehouse'>;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'assets', label: 'Manajemen Aset', icon: <Box size={16} />, path: '/aset' },
   { id: 'tracking', label: 'Mutasi & Riwayat', icon: <Shuffle size={16} />, path: '/mutasi' },
   { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', roles: ['admin', 'developer'] },
+  { id: 'warehouse', label: 'Warehouse', icon: <Warehouse size={16} />, path: '/warehouse', roles: ['admin', 'warehouse', 'developer'] },
   { id: 'consumables', label: 'Persediaan', icon: <Package size={16} />, path: '/persediaan' },
   { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan', roles: ['developer'] },
 ];
@@ -27,7 +28,13 @@ export function Sidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-  const items = NAV_ITEMS.filter((item) => !item.roles || (!!user && item.roles.includes(user.role)));
+  // Role `warehouse` dikecualikan dari kebijakan "tampil ke semua role" (item tanpa
+  // `roles`) — hanya menu yang eksplisit mendaftarkan `warehouse` yang muncul untuknya,
+  // sesuai PRD 5.12 ("hanya menu Warehouse yang muncul").
+  const items = NAV_ITEMS.filter((item) => {
+    if (item.roles) return !!user && item.roles.includes(user.role);
+    return user?.role !== 'warehouse';
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebarCollapsed');

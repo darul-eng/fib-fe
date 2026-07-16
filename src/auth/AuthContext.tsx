@@ -6,7 +6,7 @@ export type CurrentUser = {
   nama: string;
   username: string | null;
   email: string | null;
-  role: 'admin' | 'pimpinan' | 'developer';
+  role: 'admin' | 'pimpinan' | 'developer' | 'warehouse';
 };
 
 type AuthContextValue = {
@@ -18,6 +18,12 @@ type AuthContextValue = {
 
 export function hasFullAccess(user: CurrentUser | null): boolean {
   return user?.role === 'admin' || user?.role === 'developer';
+}
+
+// Role terbatas: hanya boleh mengakses Menu Warehouse (PRD 5.12), menu lain
+// ditolak/disembunyikan.
+export function isWarehouseOnly(user: CurrentUser | null): boolean {
+  return user?.role === 'warehouse';
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);

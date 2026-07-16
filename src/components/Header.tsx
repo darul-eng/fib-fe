@@ -10,6 +10,8 @@ const QrScannerModal = lazy(() => import('./QrScannerModal').then((m) => ({ defa
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
   pimpinan: 'Pimpinan',
+  developer: 'Developer',
+  warehouse: 'Warehouse',
 };
 
 export function Header() {
@@ -70,13 +72,15 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-1">
-        <button
-          className="min-h-11 min-w-11 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-md sm:hidden"
-          title="Pindai QR"
-          onClick={() => setShowScanner(true)}
-        >
-          <ScanLine size={20} />
-        </button>
+        {user?.role !== 'warehouse' && (
+          <button
+            className="min-h-11 min-w-11 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-md sm:hidden"
+            title="Pindai QR"
+            onClick={() => setShowScanner(true)}
+          >
+            <ScanLine size={20} />
+          </button>
+        )}
         {showScanner && (
           <Suspense fallback={null}>
             <QrScannerModal open={showScanner} onClose={() => setShowScanner(false)} onDecode={handleScanDecode} />
