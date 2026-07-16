@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Search, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../api/client';
 import type { Category, CategoryFieldInput, FieldType } from '../api/client';
@@ -39,6 +39,13 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showForm]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nama, setNama] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
@@ -182,8 +189,8 @@ export default function CategoriesPage() {
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Kategori Aset</h1>
           <p className="text-[11px] sm:text-xs text-slate-500">{categories.length} kategori terdaftar, lengkap dengan atribut khususnya.</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2.5 min-h-11 bg-white">
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-2.5 min-h-11 bg-white flex-1 min-w-0 sm:flex-initial">
             <Search size={15} className="text-slate-400 shrink-0" />
             <input
               type="text"
@@ -195,7 +202,7 @@ export default function CategoriesPage() {
           </div>
           {canManage && (
             <button
-              className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center gap-1.5"
+              className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
               onClick={openCreate}
             >
               <Plus size={14} /> Kategori Baru
@@ -205,7 +212,7 @@ export default function CategoriesPage() {
       </div>
 
       {canManage && showForm && (
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6">
+        <div ref={formRef} className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6 scroll-mt-20">
           <div className="flex items-center justify-between mb-3.5">
             <h3 className="m-0 text-[11px] font-bold uppercase tracking-wider text-slate-500">
               {editingId ? 'Ubah Kategori' : 'Kategori Baru'}

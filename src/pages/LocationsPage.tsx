@@ -18,6 +18,7 @@ import {
   List,
   Eye,
   Warehouse,
+  Info,
 } from 'lucide-react';
 import {
   apiPost,
@@ -36,6 +37,7 @@ import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
 import { useAuth, hasFullAccess } from '../auth/AuthContext';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
+import { useDropdownMenu } from '../hooks/useDropdownMenu';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -67,41 +69,7 @@ function LocationActionsMenu({
   onToggleWarehouse: () => void;
   onDelete: () => void;
 }) {
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  function openMenu() {
-    const rect = btnRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setCoords({
-      top: rect.bottom + 4,
-      left: Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8),
-    });
-  }
-
-  useEffect(() => {
-    if (!coords) return;
-    function close() {
-      setCoords(null);
-    }
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        menuRef.current && !menuRef.current.contains(e.target as Node) &&
-        btnRef.current && !btnRef.current.contains(e.target as Node)
-      ) {
-        close();
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
-    };
-  }, [coords]);
+  const { coords, btnRef, menuRef, toggle, close } = useDropdownMenu(MENU_WIDTH);
 
   return (
     <>
@@ -109,7 +77,7 @@ function LocationActionsMenu({
         ref={btnRef}
         className="p-2 min-h-11 min-w-11 flex items-center justify-center hover:bg-slate-100 rounded-md text-slate-600"
         title="Menu lainnya"
-        onClick={() => (coords ? setCoords(null) : openMenu())}
+        onClick={toggle}
       >
         <MoreVertical size={16} />
       </button>
@@ -125,7 +93,7 @@ function LocationActionsMenu({
                 <button
                   className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
                   onClick={() => {
-                    setCoords(null);
+                    close();
                     onViewAssets();
                   }}
                 >
@@ -134,7 +102,7 @@ function LocationActionsMenu({
                 <button
                   className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
                   onClick={() => {
-                    setCoords(null);
+                    close();
                     onPrintQr();
                   }}
                 >
@@ -143,7 +111,7 @@ function LocationActionsMenu({
                 <button
                   className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
                   onClick={() => {
-                    setCoords(null);
+                    close();
                     onRegenerateToken();
                   }}
                 >
@@ -152,7 +120,7 @@ function LocationActionsMenu({
                 <button
                   className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
                   onClick={() => {
-                    setCoords(null);
+                    close();
                     onToggleWarehouse();
                   }}
                 >
@@ -163,7 +131,7 @@ function LocationActionsMenu({
               <button
                 className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
                 onClick={() => {
-                  setCoords(null);
+                  close();
                   onListAset();
                 }}
               >
@@ -174,7 +142,7 @@ function LocationActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onDelete();
               }}
             >
@@ -213,6 +181,27 @@ const PARENT_TYPE: Record<LocationType, LocationType | null> = {
   lantai: 'gedung',
   ruangan: 'lantai',
 };
+
+function LocationNameCell({ nama }: { nama: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="flex items-center gap-1 min-w-0">
+      <span
+        className={`font-semibold text-sm text-slate-800 min-w-0 ${expanded ? 'whitespace-normal break-words' : 'truncate'}`}
+      >
+        {nama}
+      </span>
+      <button
+        type="button"
+        className="p-1 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center text-slate-400 hover:text-slate-600 shrink-0"
+        title={expanded ? 'Sembunyikan nama lengkap' : 'Lihat nama lengkap'}
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <Info size={12} />
+      </button>
+    </div>
+  );
+}
 
 function AssetCountBadge({ count }: { count: number | undefined }) {
   if (!count) return null;
@@ -375,6 +364,13 @@ export default function LocationsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showForm]);
   const [nama, setNama] = useState('');
   const [tipe, setTipe] = useState<LocationType>('gedung');
   const [gedungId, setGedungId] = useState('');
@@ -618,7 +614,7 @@ export default function LocationsPage() {
           className="flex items-center justify-between gap-2 py-2.5 px-3 border-b border-slate-100"
           style={{ paddingLeft: 12 + depth * 20 }}
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
             {isLantai && (
               <button
                 className="p-1 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 flex items-center justify-center text-slate-400 hover:text-slate-600 shrink-0"
@@ -628,13 +624,17 @@ export default function LocationsPage() {
                 {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
             )}
-            <span className="text-slate-500 shrink-0">{TYPE_ICON[node.tipe]}</span>
-            <span className="font-semibold text-sm text-slate-800 truncate">{node.nama}</span>
-            <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
-              {TYPE_LABEL[node.tipe]}
-            </span>
-            <WarehouseBadge isWarehouse={node.isWarehouse} />
-            <AssetCountBadge count={assetCounts[node.id]} />
+            <span className="text-slate-500 shrink-0 min-h-11 sm:min-h-0 sm:h-5 inline-flex items-center">{TYPE_ICON[node.tipe]}</span>
+            <div className="min-w-0 flex-1">
+              <LocationNameCell nama={node.nama} />
+              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
+                  {TYPE_LABEL[node.tipe]}
+                </span>
+                <WarehouseBadge isWarehouse={node.isWarehouse} />
+                <AssetCountBadge count={assetCounts[node.id]} />
+              </div>
+            </div>
           </div>
           {renderActions(
             node,
@@ -659,14 +659,18 @@ export default function LocationsPage() {
                 className="flex items-center justify-between gap-2 py-2.5 px-3 border-b border-slate-100"
                 style={{ paddingLeft: 12 + (depth + 1) * 20 }}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-slate-500 shrink-0">{TYPE_ICON.ruangan}</span>
-                  <span className="font-semibold text-sm text-slate-800 truncate">{room.nama}</span>
-                  <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
-                    {TYPE_LABEL.ruangan}
-                  </span>
-                  <WarehouseBadge isWarehouse={room.isWarehouse} />
-                  <AssetCountBadge count={assetCounts[room.id]} />
+                <div className="flex items-start gap-2 min-w-0 flex-1">
+                  <span className="text-slate-500 shrink-0 min-h-11 sm:min-h-0 sm:h-5 inline-flex items-center">{TYPE_ICON.ruangan}</span>
+                  <div className="min-w-0 flex-1">
+                    <LocationNameCell nama={room.nama} />
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
+                        {TYPE_LABEL.ruangan}
+                      </span>
+                      <WarehouseBadge isWarehouse={room.isWarehouse} />
+                      <AssetCountBadge count={assetCounts[room.id]} />
+                    </div>
+                  </div>
                 </div>
                 {renderActions(room)}
               </div>
@@ -717,7 +721,7 @@ export default function LocationsPage() {
       </div>
 
       {canManage && showForm && (
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6">
+        <div ref={formRef} className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6 scroll-mt-20">
           <div className="flex items-center justify-between mb-3">
             <h3 className="m-0 text-[11px] font-bold uppercase tracking-wide text-slate-500">
               {editingId ? 'Ubah Lokasi' : 'Lokasi Baru'}
@@ -815,19 +819,19 @@ export default function LocationsPage() {
             <p className="text-slate-500 text-sm text-center py-6">Tidak ada lokasi yang cocok dengan pencarian.</p>
           ) : (
             searchResults.map((l) => (
-              <div key={l.id} className="flex items-center justify-between gap-2 py-2.5 px-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-slate-500 shrink-0">{TYPE_ICON[l.tipe]}</span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-sm text-slate-800 truncate">{l.nama}</span>
+              <div key={l.id} className="flex items-start justify-between gap-2 py-2.5 px-3 border-b border-slate-100">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
+                  <span className="text-slate-500 shrink-0 min-h-11 sm:min-h-0 sm:h-5 inline-flex items-center">{TYPE_ICON[l.tipe]}</span>
+                  <div className="min-w-0 flex-1">
+                    <LocationNameCell nama={l.nama} />
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                       <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 uppercase shrink-0">
                         {TYPE_LABEL[l.tipe]}
                       </span>
                       <WarehouseBadge isWarehouse={l.isWarehouse} />
                       <AssetCountBadge count={assetCounts[l.id]} />
                     </div>
-                    {l.parent && <p className="text-[11px] text-slate-500 truncate">{l.parent.nama}</p>}
+                    {l.parent && <p className="text-[11px] text-slate-500 truncate mt-0.5">{l.parent.nama}</p>}
                   </div>
                 </div>
                 {renderActions(l)}

@@ -18,6 +18,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { apiGet, ApiError } from '../api/client';
+import { useDropdownMenu } from '../hooks/useDropdownMenu';
 import type {
   Asset,
   AssetCondition,
@@ -116,42 +117,7 @@ function RowActionsMenu({
   onRegenerateToken: () => void;
   onArchive: () => void;
 }) {
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  function openMenu() {
-    const rect = btnRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setCoords({
-      top: rect.bottom + 4,
-      left: Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8),
-    });
-  }
-
-  useEffect(() => {
-    if (!coords) return;
-    function close() {
-      setCoords(null);
-    }
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        menuRef.current && !menuRef.current.contains(e.target as Node) &&
-        btnRef.current && !btnRef.current.contains(e.target as Node)
-      ) {
-        close();
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    // capture=true: tabel punya scroll horizontal sendiri, event scroll tidak bubble ke window
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
-    };
-  }, [coords]);
+  const { coords, btnRef, menuRef, toggle, close } = useDropdownMenu(MENU_WIDTH);
 
   return (
     <>
@@ -159,7 +125,7 @@ function RowActionsMenu({
         ref={btnRef}
         className="p-1 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 lg:p-1 flex items-center justify-center hover:bg-slate-100 rounded text-slate-500"
         title="Menu lainnya"
-        onClick={() => (coords ? setCoords(null) : openMenu())}
+        onClick={toggle}
       >
         <MoreVertical size={15} />
       </button>
@@ -173,7 +139,7 @@ function RowActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onDuplicate();
               }}
             >
@@ -182,7 +148,7 @@ function RowActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onRegenerateToken();
               }}
             >
@@ -192,7 +158,7 @@ function RowActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onArchive();
               }}
             >
@@ -257,6 +223,13 @@ export default function AssetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLocationNama, setEditingLocationNama] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showForm]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -670,7 +643,7 @@ export default function AssetsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6">
+        <div ref={formRef} className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6 scroll-mt-20">
           <div className="flex justify-between items-center pb-2 mb-4 border-b border-slate-100">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               {editingId ? 'Ubah Data Aset' : 'Formulir Pendaftaran Aset Baru'}

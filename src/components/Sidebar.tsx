@@ -53,7 +53,7 @@ export function Sidebar() {
 
   return (
     <nav
-      className={`fixed bottom-0 inset-x-0 md:sticky md:inset-x-auto w-full md:py-4 md:px-3 bg-white border-t md:border-t-0 border-r-0 md:border-r border-slate-200 py-2 px-3 flex md:flex-col justify-around md:justify-start gap-1 z-40 md:top-[57px] md:h-[calc(100vh-57px)] shadow-lg md:shadow-none ${
+      className={`no-scrollbar fixed bottom-0 inset-x-0 md:sticky md:inset-x-auto w-full md:py-4 md:px-3 bg-white border-t md:border-t-0 border-r-0 md:border-r border-slate-200 pt-2 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex md:flex-col overflow-x-auto md:overflow-visible justify-start md:justify-start gap-1 z-40 md:top-[57px] md:h-[calc(100vh-57px)] shadow-lg md:shadow-none ${
         collapsed ? 'md:w-[72px] md:px-2' : 'md:w-60'
       }`}
     >
@@ -73,7 +73,7 @@ export function Sidebar() {
         return (
           <button
             key={item.id}
-            className={`flex items-center gap-2.5 min-h-11 px-3 py-3 md:py-2 text-sm font-medium rounded-md w-full transition-colors ${
+            className={`flex items-center justify-center gap-2.5 min-h-11 min-w-11 shrink-0 px-3 py-3 md:py-2 text-sm font-medium rounded-md md:w-full md:justify-start transition-colors ${
               collapsed ? 'md:justify-center md:px-0' : ''
             } ${active ? 'bg-primary-tint text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
             onClick={() => navigate(item.path)}
