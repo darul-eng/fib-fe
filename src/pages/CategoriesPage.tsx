@@ -4,7 +4,7 @@ import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../api/client';
 import type { Category, CategoryFieldInput, FieldType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'text', label: 'Teks' },
@@ -32,7 +32,7 @@ const PAGE_SIZE = 9;
 
 export default function CategoriesPage() {
   const { user } = useAuth();
-  const canManage = user?.role === 'admin';
+  const canManage = hasFullAccess(user);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

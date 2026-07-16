@@ -17,7 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'locations', label: 'Lokasi', icon: <MapPin size={16} />, path: '/lokasi' },
   { id: 'assets', label: 'Manajemen Aset', icon: <Box size={16} />, path: '/aset' },
   { id: 'tracking', label: 'Mutasi & Riwayat', icon: <Shuffle size={16} />, path: '/mutasi' },
-  { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', roles: ['admin'] },
+  { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', roles: ['admin', 'developer'] },
   { id: 'consumables', label: 'Persediaan', icon: <Package size={16} />, path: '/persediaan' },
   { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan', roles: ['developer'] },
 ];

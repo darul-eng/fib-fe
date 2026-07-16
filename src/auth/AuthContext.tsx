@@ -16,6 +16,10 @@ type AuthContextValue = {
   logout: () => Promise<void>;
 };
 
+export function hasFullAccess(user: CurrentUser | null): boolean {
+  return user?.role === 'admin' || user?.role === 'developer';
+}
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

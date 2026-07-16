@@ -25,7 +25,7 @@ import type { AuditSessionSummary, AuditSessionView, Location } from '../api/cli
 import { ApiError } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 // Lazy: html5-qrcode cukup besar, hanya dibutuhkan saat scanner benar-benar dibuka.
 const QrScannerModal = lazy(() => import('../components/QrScannerModal').then((m) => ({ default: m.QrScannerModal })));
@@ -412,7 +412,7 @@ export default function AuditPage() {
   const [tab, setTab] = useState<Tab>('mulai');
   const [session, setSession] = useState<AuditSessionView | null>(null);
 
-  if (user?.role !== 'admin') {
+  if (!hasFullAccess(user)) {
     return <p className="text-slate-500 text-sm">Fitur audit ruangan khusus untuk Admin.</p>;
   }
 

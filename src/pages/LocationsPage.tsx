@@ -32,7 +32,7 @@ import {
 import type { Asset, Location, LocationType } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, hasFullAccess } from '../auth/AuthContext';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -336,7 +336,7 @@ function buildTree(upper: Location[]): TreeNode[] {
 export default function LocationsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const canManage = user?.role === 'admin';
+  const canManage = hasFullAccess(user);
 
   // Gedung + lantai saja — dasar pohon, selalu dimuat penuh (jumlahnya kecil).
   const [upper, setUpper] = useState<Location[]>([]);
