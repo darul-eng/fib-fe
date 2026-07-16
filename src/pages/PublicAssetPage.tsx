@@ -4,7 +4,7 @@ import { ShieldCheck, MapPin, User, ArrowLeft, Shuffle } from 'lucide-react';
 import { getPublicAsset, ApiError } from '../api/client';
 import type { PublicAsset, MovementType } from '../api/client';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -116,7 +116,7 @@ export default function PublicAssetPage() {
               <span>Data sensitif (harga beli, sumber dana) disembunyikan otomatis untuk publik.</span>
             </div>
 
-            {user?.role === 'admin' && token && (
+            {hasFullAccess(user) && token && (
               <button
                 className="btn-primary w-full min-h-11 mb-4 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm"
                 onClick={() => navigate(`/mutasi?assetToken=${token}`)}

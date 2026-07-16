@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -17,6 +18,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { apiGet, ApiError } from '../api/client';
+import { useDropdownMenu } from '../hooks/useDropdownMenu';
 import type {
   Asset,
   AssetCondition,
@@ -115,42 +117,7 @@ function RowActionsMenu({
   onRegenerateToken: () => void;
   onArchive: () => void;
 }) {
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  function openMenu() {
-    const rect = btnRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setCoords({
-      top: rect.bottom + 4,
-      left: Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8),
-    });
-  }
-
-  useEffect(() => {
-    if (!coords) return;
-    function close() {
-      setCoords(null);
-    }
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        menuRef.current && !menuRef.current.contains(e.target as Node) &&
-        btnRef.current && !btnRef.current.contains(e.target as Node)
-      ) {
-        close();
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    // capture=true: tabel punya scroll horizontal sendiri, event scroll tidak bubble ke window
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
-    };
-  }, [coords]);
+  const { coords, btnRef, menuRef, toggle, close } = useDropdownMenu(MENU_WIDTH);
 
   return (
     <>
@@ -158,7 +125,7 @@ function RowActionsMenu({
         ref={btnRef}
         className="p-1 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 lg:p-1 flex items-center justify-center hover:bg-slate-100 rounded text-slate-500"
         title="Menu lainnya"
-        onClick={() => (coords ? setCoords(null) : openMenu())}
+        onClick={toggle}
       >
         <MoreVertical size={15} />
       </button>
@@ -172,7 +139,7 @@ function RowActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onDuplicate();
               }}
             >
@@ -181,7 +148,7 @@ function RowActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onRegenerateToken();
               }}
             >
@@ -191,7 +158,7 @@ function RowActionsMenu({
             <button
               className="w-full flex items-center gap-2 px-2.5 py-2 min-h-11 lg:min-h-0 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md"
               onClick={() => {
-                setCoords(null);
+                close();
                 onArchive();
               }}
             >
@@ -217,6 +184,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function AssetsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
@@ -228,6 +196,10 @@ export default function AssetsPage() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterKondisi, setFilterKondisi] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  // Filter lokasi datang dari deep-link (mis. tombol "Lihat Aset" di halaman Lokasi),
+  // bukan dari panel filter kategori/kondisi — makanya disimpan & dibersihkan terpisah.
+  const [filterLocationId, setFilterLocationId] = useState(searchParams.get('locationId') ?? '');
+  const [filterLocationNama, setFilterLocationNama] = useState(searchParams.get('locationNama') ?? '');
   const hasActiveFilter = filterCategory !== '' || filterKondisi !== '';
 
   function resetFilters() {
@@ -236,9 +208,28 @@ export default function AssetsPage() {
     setPage(1);
   }
 
+  function clearLocationFilter() {
+    setFilterLocationId('');
+    setFilterLocationNama('');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('locationId');
+      next.delete('locationNama');
+      return next;
+    });
+    setPage(1);
+  }
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLocationNama, setEditingLocationNama] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showForm]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -266,7 +257,7 @@ export default function AssetsPage() {
   useEffect(() => {
     void loadAssets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filterCategory, filterKondisi]);
+  }, [page, filterCategory, filterKondisi, filterLocationId]);
 
   async function loadAssets() {
     setLoading(true);
@@ -275,6 +266,7 @@ export default function AssetsPage() {
         search: search || undefined,
         categoryId: filterCategory || undefined,
         kondisi: (filterKondisi as AssetCondition) || undefined,
+        locationId: filterLocationId || undefined,
         page,
         limit,
       });
@@ -499,6 +491,23 @@ export default function AssetsPage() {
           <p className="text-[11px] sm:text-xs text-slate-500">Pencatatan data, duplikasi massal, dan atribut kustom per kategori.</p>
         </div>
 
+        {filterLocationId && (
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="text-[11px] text-slate-500">Lokasi:</span>
+            <span className="inline-flex items-center gap-1 bg-primary-tint text-primary px-2 py-1 rounded-md text-xs font-semibold">
+              {filterLocationNama || 'Terpilih'}
+              <button
+                type="button"
+                title="Hapus filter lokasi"
+                className="hover:opacity-70"
+                onClick={clearLocationFilter}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row lg:items-center gap-2">
           <div className="flex items-center gap-2 lg:flex-1 lg:min-w-0">
             <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-0">
@@ -515,7 +524,7 @@ export default function AssetsPage() {
             <button
               type="button"
               title="Filter"
-              className={`relative shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-full sm:rounded-lg border lg:hidden transition-colors ${
+              className={`relative shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-lg border lg:hidden transition-colors ${
                 hasActiveFilter
                   ? 'border-transparent sm:border-primary bg-primary-tint text-primary'
                   : 'border-transparent sm:border-slate-200 bg-slate-100 sm:bg-white text-slate-500'
@@ -563,14 +572,14 @@ export default function AssetsPage() {
 
           <div className="flex gap-2 lg:shrink-0">
             <button
-              className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-full sm:rounded-lg text-xs font-bold shadow-sm"
+              className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold shadow-sm"
               onClick={openCreateForm}
             >
               <Plus size={16} /> Aset Baru
             </button>
             <button
               title="Import Excel/CSV"
-              className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-full sm:rounded-lg text-xs font-bold shadow-sm"
+              className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
               onClick={() => setShowImport(true)}
             >
               <Download size={16} /> <span className="hidden sm:inline">Import</span>
@@ -578,7 +587,7 @@ export default function AssetsPage() {
             <button
               disabled={assets.length === 0}
               title="Cetak label QR massal"
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-full sm:rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={openPrintModal}
             >
               <Printer size={16} /> <span className="hidden sm:inline">Cetak QR</span>
@@ -623,7 +632,7 @@ export default function AssetsPage() {
             {hasActiveFilter && (
               <button
                 type="button"
-                className="shrink-0 min-h-11 px-3 rounded-xl sm:rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-200"
+                className="shrink-0 min-h-11 px-3 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-200"
                 onClick={resetFilters}
               >
                 Reset
@@ -634,7 +643,7 @@ export default function AssetsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6">
+        <div ref={formRef} className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 mb-4 sm:mb-6 scroll-mt-20">
           <div className="flex justify-between items-center pb-2 mb-4 border-b border-slate-100">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               {editingId ? 'Ubah Data Aset' : 'Formulir Pendaftaran Aset Baru'}

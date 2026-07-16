@@ -10,6 +10,7 @@ import LocationsPage   from './pages/LocationsPage';
 import AssetsPage      from './pages/AssetsPage';
 import TrackingPage    from './pages/TrackingPage';
 import AuditPage       from './pages/AuditPage';
+import WarehousePage   from './pages/WarehousePage';
 import ConsumablesPage from './pages/ConsumablesPage';
 import SettingsPage    from './pages/SettingsPage';
 import PublicAssetPage    from './pages/PublicAssetPage';
@@ -51,6 +52,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/aset"        element={<AssetsPage />} />
               <Route path="/mutasi"      element={<TrackingPage />} />
               <Route path="/audit"       element={<AuditPage />} />
+              <Route path="/warehouse"   element={<WarehousePage />} />
               <Route path="/persediaan"  element={<ConsumablesPage />} />
               <Route path="/pengaturan"  element={<SettingsPage />} />
             </Route>

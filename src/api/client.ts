@@ -125,6 +125,7 @@ export type Location = {
   tipe: LocationType;
   parentId: string | null;
   qrToken: string;
+  isWarehouse: boolean;
   parent: { id: string; nama: string; tipe: LocationType } | null;
 };
 
@@ -146,6 +147,12 @@ export type LocationQuery = {
 // buka-cabang pohon secara lambat (lihat LocationsPage).
 export function listLocations(query: LocationQuery = {}) {
   return apiGet<Location[]>(`/locations${toQueryString(query)}`);
+}
+
+// Jumlah aset per lokasi (gedung/lantai/ruangan, sudah dijumlahkan berjenjang
+// di backend) — dipakai untuk badge jumlah aset di pohon Lokasi.
+export function getLocationAssetCounts() {
+  return apiGet<Record<string, number>>('/locations/asset-counts');
 }
 
 export type AssetCondition = 'baik' | 'rusak_ringan' | 'rusak_berat' | 'perbaikan' | 'dihapus';
@@ -483,6 +490,24 @@ export function moveHereAudit(id: string, assetId: string) {
 
 export function finishAudit(id: string, catatan?: string) {
   return apiPost<AuditSessionView>(`/audit-sessions/${id}/finish`, { catatan });
+}
+
+// ---------- Menu Warehouse: Scan Masuk/Keluar (Tahap 6) ----------
+
+export function getGudangLocation() {
+  return apiGet<Location | null>('/warehouse/gudang');
+}
+
+export function warehouseMasuk(qrToken: string, catatan?: string) {
+  return apiPost<{ asset: Asset; movement: Movement }>('/warehouse/masuk', { qrToken, catatan });
+}
+
+export function warehouseKeluar(qrToken: string, locationId: string, catatan?: string) {
+  return apiPost<{ asset: Asset; movement: Movement }>('/warehouse/keluar', { qrToken, locationId, catatan });
+}
+
+export function setLocationWarehouse(id: string) {
+  return apiPost<Location>(`/locations/${id}/set-warehouse`);
 }
 
 // ---------- Riwayat Audit ----------

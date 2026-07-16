@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { ShieldAlert } from 'lucide-react';
 import { apiGet, apiPut, ApiError } from '../api/client';
 import type { Theme } from '../theme';
 import { applyTheme, defaultTheme } from '../theme';
 import { showToast } from '../components/ToastContainer';
+import { useAuth } from '../auth/AuthContext';
 
 interface Preset {
   name: string;
@@ -55,6 +57,7 @@ async function persistTheme(theme: { primary: string; primaryDark: string }, suc
 }
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [colorHex, setColorHex] = useState(defaultTheme.primary);
   const [ssoEnabled, setSsoEnabled] = useState(false);
 
@@ -138,6 +141,16 @@ export default function SettingsPage() {
     showToast(
       enabled ? 'Integrasi Keycloak SSO diaktifkan' : 'Integrasi Keycloak SSO dinonaktifkan',
       enabled ? 'warning' : 'success',
+    );
+  }
+
+  if (user?.role !== 'developer') {
+    return (
+      <div className="bg-white p-6 rounded-lg border border-slate-200 flex flex-col items-center text-center gap-2 max-w-md mx-auto">
+        <ShieldAlert size={28} className="text-slate-400" />
+        <h1 className="text-sm font-bold text-slate-800">Akses Ditolak</h1>
+        <p className="text-xs text-slate-500">Halaman Pengaturan hanya bisa diakses oleh akun developer.</p>
+      </div>
     );
   }
 
