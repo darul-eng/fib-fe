@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Box, Shuffle, Package, Settings, ChevronLeft, ChevronRight, Tags, MapPin, ClipboardCheck, Warehouse } from 'lucide-react';
+import { Home, Box, Shuffle, Package, Settings, ChevronLeft, ChevronRight, Tags, MapPin, ClipboardCheck, Warehouse, Users } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 
 interface NavItem {
@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'audit', label: 'Audit Ruangan', icon: <ClipboardCheck size={16} />, path: '/audit', roles: ['admin', 'developer'] },
   { id: 'warehouse', label: 'Warehouse', icon: <Warehouse size={16} />, path: '/warehouse', roles: ['admin', 'warehouse', 'developer'] },
   { id: 'consumables', label: 'Persediaan', icon: <Package size={16} />, path: '/persediaan' },
+  { id: 'users', label: 'Pengguna', icon: <Users size={16} />, path: '/pengguna', roles: ['admin', 'developer'] },
   { id: 'settings', label: 'Pengaturan', icon: <Settings size={16} />, path: '/pengaturan', roles: ['developer'] },
 ];
 
@@ -57,17 +58,6 @@ export function Sidebar() {
         collapsed ? 'md:w-[72px] md:px-2' : 'md:w-60'
       }`}
     >
-      <button
-        className={`hidden md:flex items-center min-h-11 px-3 text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded-md mb-2 ${
-          collapsed ? 'justify-center' : 'justify-between'
-        }`}
-        onClick={toggleCollapse}
-        title={collapsed ? 'Perluas Menu' : 'Sembunyikan Label'}
-      >
-        {!collapsed && <span>Collapse Menu</span>}
-        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
-
       {items.map((item) => {
         const active = isActive(item.path);
         return (
@@ -83,6 +73,14 @@ export function Sidebar() {
           </button>
         );
       })}
+
+      <button
+        className="hidden md:flex items-center justify-center min-h-11 px-3 mt-auto text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded-md"
+        onClick={toggleCollapse}
+        title={collapsed ? 'Perluas Menu' : 'Sembunyikan Label'}
+      >
+        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+      </button>
     </nav>
   );
 }

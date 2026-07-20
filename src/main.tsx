@@ -13,6 +13,7 @@ import AuditPage       from './pages/AuditPage';
 import WarehousePage   from './pages/WarehousePage';
 import ConsumablesPage from './pages/ConsumablesPage';
 import SettingsPage    from './pages/SettingsPage';
+import UsersPage       from './pages/UsersPage';
 import PublicAssetPage    from './pages/PublicAssetPage';
 import PublicLocationPage from './pages/PublicLocationPage';
 import { loadTheme }   from './theme';
@@ -54,6 +55,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="/audit"       element={<AuditPage />} />
               <Route path="/warehouse"   element={<WarehousePage />} />
               <Route path="/persediaan"  element={<ConsumablesPage />} />
+              <Route path="/pengguna"    element={<UsersPage />} />
               <Route path="/pengaturan"  element={<SettingsPage />} />
             </Route>
           </Route>

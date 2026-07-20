@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { Eye, EyeOff, LogIn, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth, ApiError } from '../auth/AuthContext';
 
 export default function LoginPage() {
@@ -110,19 +110,6 @@ export default function LoginPage() {
                 <LogIn size={16} /> Masuk ke Sistem
               </>
             )}
-          </button>
-
-          <div className="my-1 border-t border-slate-200" />
-
-          {/* SSO Button — Tahap 8, belum tersedia */}
-          <button
-            type="button"
-            className="w-full min-h-11 flex items-center justify-center gap-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-400 bg-slate-50 cursor-not-allowed"
-            disabled
-            title="Menyusul di Tahap 8"
-          >
-            <ShieldCheck size={16} className="text-slate-400" />
-            Masuk via SSO Universitas (Keycloak)
           </button>
         </form>
 
