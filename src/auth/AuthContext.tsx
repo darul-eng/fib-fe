@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { apiGet, apiPost, ApiError } from '../api/client';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { apiGet, apiPost, ApiError, setUnauthorizedHandler } from '../api/client';
+import { showToast } from '../components/ToastContainer';
 
 export type CurrentUser = {
   id: string;
@@ -31,12 +32,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const userRef = useRef<CurrentUser | null>(null);
+  userRef.current = user;
 
   useEffect(() => {
     apiGet<CurrentUser>('/auth/me')
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  // Sesi bisa kedaluwarsa di tengah pemakaian (token 7 hari) — tanpa ini, request
+  // yang gagal 401 hanya menampilkan toast error generik tanpa pernah mengarahkan
+  // balik ke /login (RequireAuth bereaksi otomatis begitu `user` jadi null).
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      if (userRef.current) {
+        showToast('Sesi Anda berakhir, silakan login kembali', 'danger');
+      }
+      setUser(null);
+    });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {

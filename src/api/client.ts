@@ -6,6 +6,13 @@ export class ApiError extends Error {
   }
 }
 
+// Dipanggil AuthContext untuk membersihkan sesi & mengarahkan ke /login saat
+// respons API mana pun kembali 401 (mis. token kedaluwarsa di tengah pemakaian).
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
 async function extractErrorMessage(res: Response): Promise<string> {
   try {
     const body = await res.json();
@@ -17,12 +24,18 @@ async function extractErrorMessage(res: Response): Promise<string> {
   return `Permintaan gagal (${res.status})`;
 }
 
+async function assertOk(res: Response): Promise<void> {
+  if (res.ok) return;
+  if (res.status === 401) onUnauthorized?.();
+  throw new ApiError(res.status, await extractErrorMessage(res));
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}/api${path}`, {
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
   return res.json() as Promise<T>;
 }
 
@@ -33,7 +46,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
     credentials: 'include',
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
   return res.json() as Promise<T>;
 }
 
@@ -44,7 +57,7 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
     credentials: 'include',
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
   return res.json() as Promise<T>;
 }
 
@@ -55,7 +68,7 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
     credentials: 'include',
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
   return res.json() as Promise<T>;
 }
 
@@ -64,7 +77,7 @@ export async function apiDelete(path: string): Promise<void> {
     method: 'DELETE',
     credentials: 'include',
   });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
 }
 
 export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
@@ -73,13 +86,13 @@ export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
     credentials: 'include',
     body: form,
   });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
   return res.json() as Promise<T>;
 }
 
 export async function apiDownload(path: string): Promise<Blob> {
   const res = await fetch(`${BASE}/api${path}`, { credentials: 'include' });
-  if (!res.ok) throw new ApiError(res.status, await extractErrorMessage(res));
+  await assertOk(res);
   return res.blob();
 }
 
