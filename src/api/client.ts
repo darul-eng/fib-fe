@@ -539,3 +539,39 @@ export type AuditSessionQuery = {
 export function listAuditSessions(query: AuditSessionQuery = {}) {
   return apiGet<AuditSessionListResult>(`/audit-sessions${toQueryString(query)}`);
 }
+
+// ---------- Manajemen Pengguna (admin) ----------
+
+export type UserRole = 'admin' | 'pimpinan' | 'developer' | 'warehouse';
+
+export type User = {
+  id: string;
+  nama: string;
+  username: string | null;
+  email: string | null;
+  role: UserRole;
+};
+
+export type RegisterUserInput = {
+  nama: string;
+  username: string;
+  email?: string;
+  password: string;
+  role: UserRole;
+};
+
+export function listUsers() {
+  return apiGet<User[]>('/auth/users');
+}
+
+export function registerUser(input: RegisterUserInput) {
+  return apiPost<User>('/auth/register', input);
+}
+
+export function resetUserPassword(id: string, newPassword: string) {
+  return apiPost<{ ok: boolean }>(`/auth/users/${id}/reset-password`, { newPassword });
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return apiPost<{ ok: boolean }>('/auth/change-password', { currentPassword, newPassword });
+}

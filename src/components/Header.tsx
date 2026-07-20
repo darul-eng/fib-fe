@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { ChangePasswordModal } from './ChangePasswordModal';
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
@@ -14,6 +15,7 @@ export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,6 +74,15 @@ export function Header() {
                   </span>
                 </div>
                 <button
+                  className="w-full min-h-11 flex items-center gap-2 px-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setShowChangePassword(true);
+                  }}
+                >
+                  <KeyRound size={14} /> Ganti Password
+                </button>
+                <button
                   className="w-full min-h-11 flex items-center gap-2 px-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
                   onClick={handleLogout}
                 >
@@ -82,6 +93,8 @@ export function Header() {
           </div>
         )}
       </div>
+
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
     </header>
   );
 }
