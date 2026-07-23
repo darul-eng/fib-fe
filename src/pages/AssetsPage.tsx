@@ -44,6 +44,7 @@ import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
 import { RoomSelect } from '../components/RoomSelect';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
+import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -184,6 +185,8 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function AssetsPage() {
+  const { user } = useAuth();
+  const canManage = hasFullAccess(user);
   const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -324,13 +327,17 @@ export default function AssetsPage() {
       const input: AssetInput = {
         nama: form.nama,
         categoryId: form.categoryId,
-        kondisi: form.kondisi,
         tahunBeli: form.tahunBeli ? Number(form.tahunBeli) : undefined,
         hargaBeli: form.hargaBeli ? Number(form.hargaBeli) : undefined,
         sumberDana: form.sumberDana || undefined,
-        locationId: form.locationId || undefined,
-        holderName: form.holderName || undefined,
         attributes: form.attributes,
+        ...(editingId
+          ? {}
+          : {
+              kondisi: form.kondisi,
+              locationId: form.locationId || undefined,
+              holderName: form.holderName || undefined,
+            }),
       };
 
       const saved = editingId ? await updateAsset(editingId, input) : await createAsset(input);
@@ -570,29 +577,31 @@ export default function AssetsPage() {
             </div>
           </div>
 
-          <div className="flex gap-2 lg:shrink-0">
-            <button
-              className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold shadow-sm"
-              onClick={openCreateForm}
-            >
-              <Plus size={16} /> Aset Baru
-            </button>
-            <button
-              title="Import Excel/CSV"
-              className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
-              onClick={() => setShowImport(true)}
-            >
-              <Download size={16} /> <span className="hidden sm:inline">Import</span>
-            </button>
-            <button
-              disabled={assets.length === 0}
-              title="Cetak label QR massal"
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
-              onClick={openPrintModal}
-            >
-              <Printer size={16} /> <span className="hidden sm:inline">Cetak QR</span>
-            </button>
-          </div>
+          {canManage && (
+            <div className="flex gap-2 lg:shrink-0">
+              <button
+                className="btn-primary flex-1 lg:flex-none flex items-center justify-center gap-1.5 min-h-11 px-3 rounded-lg text-xs font-bold shadow-sm"
+                onClick={openCreateForm}
+              >
+                <Plus size={16} /> Aset Baru
+              </button>
+              <button
+                title="Import Excel/CSV"
+                className="bg-slate-800 hover:bg-slate-700 text-white shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold shadow-sm"
+                onClick={() => setShowImport(true)}
+              >
+                <Download size={16} /> <span className="hidden sm:inline">Import</span>
+              </button>
+              <button
+                disabled={assets.length === 0}
+                title="Cetak label QR massal"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={openPrintModal}
+              >
+                <Printer size={16} /> <span className="hidden sm:inline">Cetak QR</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {showFilterPanel && (
@@ -882,27 +891,31 @@ export default function AssetsPage() {
                       <AttributeSummary asset={a} />
                     </td>
                     <td className="p-3">
-                      <div className="flex gap-1 justify-end items-center">
-                        <button className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Edit" onClick={() => openEditForm(a)}>
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          className="p-1 hover:bg-slate-100 rounded text-slate-500"
-                          title="Cetak QR"
-                          disabled={printing}
-                          onClick={() => void handlePrintSingle(a)}
-                        >
-                          <Printer size={15} />
-                        </button>
-                        <RowActionsMenu
-                          onDuplicate={() => {
-                            setDuplicateTarget(a);
-                            setDuplicateCount(2);
-                          }}
-                          onRegenerateToken={() => void handleRegenerateToken(a)}
-                          onArchive={() => void handleArchive(a)}
-                        />
-                      </div>
+                      {canManage ? (
+                        <div className="flex gap-1 justify-end items-center">
+                          <button className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Edit" onClick={() => openEditForm(a)}>
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                            title="Cetak QR"
+                            disabled={printing}
+                            onClick={() => void handlePrintSingle(a)}
+                          >
+                            <Printer size={15} />
+                          </button>
+                          <RowActionsMenu
+                            onDuplicate={() => {
+                              setDuplicateTarget(a);
+                              setDuplicateCount(2);
+                            }}
+                            onRegenerateToken={() => void handleRegenerateToken(a)}
+                            onArchive={() => void handleArchive(a)}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 text-right block">—</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -937,30 +950,32 @@ export default function AssetsPage() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  className="flex-1 min-h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
-                  onClick={() => openEditForm(a)}
-                >
-                  <Pencil size={13} /> Edit
-                </button>
-                <button
-                  className="min-h-11 min-w-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center justify-center"
-                  title="Cetak QR"
-                  disabled={printing}
-                  onClick={() => void handlePrintSingle(a)}
-                >
-                  <Printer size={15} />
-                </button>
-                <RowActionsMenu
-                  onDuplicate={() => {
-                    setDuplicateTarget(a);
-                    setDuplicateCount(2);
-                  }}
-                  onRegenerateToken={() => void handleRegenerateToken(a)}
-                  onArchive={() => void handleArchive(a)}
-                />
-              </div>
+              {canManage && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    className="flex-1 min-h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                    onClick={() => openEditForm(a)}
+                  >
+                    <Pencil size={13} /> Edit
+                  </button>
+                  <button
+                    className="min-h-11 min-w-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center justify-center"
+                    title="Cetak QR"
+                    disabled={printing}
+                    onClick={() => void handlePrintSingle(a)}
+                  >
+                    <Printer size={15} />
+                  </button>
+                  <RowActionsMenu
+                    onDuplicate={() => {
+                      setDuplicateTarget(a);
+                      setDuplicateCount(2);
+                    }}
+                    onRegenerateToken={() => void handleRegenerateToken(a)}
+                    onArchive={() => void handleArchive(a)}
+                  />
+                </div>
+              )}
             </div>
           ))}
           {!loading && assets.length === 0 && (
