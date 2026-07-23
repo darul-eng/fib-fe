@@ -5,6 +5,7 @@ import { ApiError, getAssetByToken, listAssets, listMovements, moveAsset } from 
 import type { Asset, AssetCondition, Movement } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { RoomSelect } from '../components/RoomSelect';
+import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 const KONDISI_LABEL: Record<AssetCondition, string> = {
   baik: 'Baik',
@@ -74,6 +75,8 @@ function MovementEntry({ m }: { m: Movement }) {
 }
 
 export default function TrackingPage() {
+  const { user } = useAuth();
+  const canManage = hasFullAccess(user);
   const [searchParams, setSearchParams] = useSearchParams();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
@@ -223,12 +226,14 @@ export default function TrackingPage() {
           <h2 className="text-lg sm:text-xl font-bold tracking-tight">Pelacakan Perpindahan & Riwayat</h2>
           <p className="text-[11px] sm:text-xs text-slate-500">Pilih aset untuk melihat riwayat mutasinya, atau catat mutasi baru.</p>
         </div>
-        <button
-          className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center gap-1.5 w-full sm:w-auto justify-center"
-          onClick={() => openPanel()}
-        >
-          <Shuffle size={14} /> Mutasi Aset
-        </button>
+        {canManage && (
+          <button
+            className="btn-primary px-2.5 py-1.5 sm:px-3 rounded-lg text-xs font-bold tracking-wide shadow-sm min-h-11 flex items-center gap-1.5 w-full sm:w-auto justify-center"
+            onClick={() => openPanel()}
+          >
+            <Shuffle size={14} /> Mutasi Aset
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSearchSubmit} className="relative mb-4 sm:mb-6 max-w-sm">
@@ -281,9 +286,11 @@ export default function TrackingPage() {
                         <button className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Riwayat" onClick={() => openHistory(a)}>
                           <History size={15} />
                         </button>
-                        <button className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Mutasi" onClick={() => openPanel(a)}>
-                          <Shuffle size={15} />
-                        </button>
+                        {canManage && (
+                          <button className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Mutasi" onClick={() => openPanel(a)}>
+                            <Shuffle size={15} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -314,12 +321,14 @@ export default function TrackingPage() {
                 >
                   <History size={13} /> Riwayat
                 </button>
-                <button
-                  className="flex-1 min-h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
-                  onClick={() => openPanel(a)}
-                >
-                  <Shuffle size={13} /> Mutasi
-                </button>
+                {canManage && (
+                  <button
+                    className="flex-1 min-h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                    onClick={() => openPanel(a)}
+                  >
+                    <Shuffle size={13} /> Mutasi
+                  </button>
+                )}
               </div>
             </div>
           ))}
