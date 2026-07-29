@@ -14,10 +14,17 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'boolean', label: 'Ya/Tidak' },
 ];
 
-type FieldRow = CategoryFieldInput & { _rowId: number };
+type FieldRow = CategoryFieldInput & { _rowId: number; opsiText?: string };
 let rowSeq = 0;
 function newFieldRow(): FieldRow {
-  return { _rowId: ++rowSeq, label: '', key: '', tipe: 'text', wajib: false, isPublic: true, opsi: [] };
+  return { _rowId: ++rowSeq, label: '', key: '', tipe: 'text', wajib: false, isPublic: true, opsi: [], opsiText: '' };
+}
+
+function parseOpsiText(text: string) {
+  return text
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function slugify(label: string) {
@@ -47,6 +54,7 @@ export default function CategoriesPage() {
     }
   }, [showForm]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingUpdatedAt, setEditingUpdatedAt] = useState<string | null>(null);
   const [nama, setNama] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
   const [fields, setFields] = useState<FieldRow[]>([]);
@@ -86,6 +94,7 @@ export default function CategoriesPage() {
 
   function openCreate() {
     setEditingId(null);
+    setEditingUpdatedAt(null);
     setNama('');
     setDeskripsi('');
     setFields([]);
@@ -94,6 +103,7 @@ export default function CategoriesPage() {
 
   function openEdit(c: Category) {
     setEditingId(c.id);
+    setEditingUpdatedAt(c.updatedAt);
     setNama(c.nama);
     setDeskripsi(c.deskripsi ?? '');
     setFields(
@@ -105,6 +115,7 @@ export default function CategoriesPage() {
         wajib: f.wajib,
         isPublic: f.isPublic,
         opsi: f.opsi ?? [],
+        opsiText: (f.opsi ?? []).join(', '),
       })),
     );
     setShowForm(true);
@@ -113,6 +124,7 @@ export default function CategoriesPage() {
   function closeForm() {
     setShowForm(false);
     setEditingId(null);
+    setEditingUpdatedAt(null);
   }
 
   function updateField(rowId: number, patch: Partial<FieldRow>) {
@@ -136,11 +148,11 @@ export default function CategoriesPage() {
           tipe: f.tipe,
           wajib: f.wajib ?? false,
           isPublic: f.isPublic ?? true,
-          opsi: f.tipe === 'select' ? f.opsi : undefined,
+          opsi: f.tipe === 'select' ? parseOpsiText(f.opsiText ?? '') : undefined,
         })),
       };
       if (editingId) {
-        await apiPatch(`/categories/${editingId}`, payload);
+        await apiPatch(`/categories/${editingId}`, { ...payload, expectedUpdatedAt: editingUpdatedAt });
         showToast('Kategori berhasil diperbarui');
       } else {
         await apiPost('/categories', payload);
@@ -150,6 +162,10 @@ export default function CategoriesPage() {
       load();
     } catch (e) {
       showToast(e instanceof ApiError ? e.message : 'Gagal menyimpan kategori', 'danger');
+      if (e instanceof ApiError && e.status === 409) {
+        closeForm();
+        load();
+      }
     } finally {
       setSaving(false);
     }
@@ -323,15 +339,8 @@ export default function CategoriesPage() {
                       <input
                         className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11 sm:col-span-5"
                         placeholder="Opsi, pisahkan dengan koma (mis. 4 GB, 8 GB, 16 GB)"
-                        value={(f.opsi ?? []).join(', ')}
-                        onChange={(e) =>
-                          updateField(f._rowId, {
-                            opsi: e.target.value
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          })
-                        }
+                        value={f.opsiText ?? ''}
+                        onChange={(e) => updateField(f._rowId, { opsiText: e.target.value })}
                       />
                     )}
                   </div>

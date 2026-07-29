@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { resetUserPassword, ApiError, type User } from '../api/client';
 import { showToast } from './ToastContainer';
+import { PasswordInput } from './PasswordInput';
 
 export function ResetPasswordModal({ user, onClose }: { user: User; onClose: () => void }) {
   const [newPassword, setNewPassword] = useState('');
@@ -52,8 +53,7 @@ export function ResetPasswordModal({ user, onClose }: { user: User; onClose: () 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Password Baru</label>
-            <input
-              type="password"
+            <PasswordInput
               className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
               required
               autoFocus
@@ -64,8 +64,7 @@ export function ResetPasswordModal({ user, onClose }: { user: User; onClose: () 
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Konfirmasi Password Baru</label>
-            <input
-              type="password"
+            <PasswordInput
               className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
               required
               minLength={8}

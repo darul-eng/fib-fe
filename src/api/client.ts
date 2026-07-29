@@ -113,6 +113,7 @@ export type Category = {
   nama: string;
   deskripsi: string | null;
   fields: CategoryField[];
+  updatedAt: string;
 };
 
 export type CategoryFieldInput = {
@@ -140,6 +141,7 @@ export type Location = {
   qrToken: string;
   isWarehouse: boolean;
   parent: { id: string; nama: string; tipe: LocationType } | null;
+  updatedAt: string;
 };
 
 export type LocationInput = {
@@ -206,6 +208,7 @@ export type AssetInput = {
   locationId?: string;
   holderName?: string;
   attributes?: Record<string, unknown>;
+  expectedUpdatedAt?: string;
 };
 
 export type AssetQuery = {
@@ -331,6 +334,7 @@ export type MoveAssetInput = {
   holderName?: string;
   kondisi?: AssetCondition;
   catatan?: string;
+  expectedUpdatedAt: string;
 };
 
 export function listMovements(query: { assetId?: string; page?: number; limit?: number }) {

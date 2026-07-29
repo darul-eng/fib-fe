@@ -192,6 +192,7 @@ export default function TrackingPage() {
         holderName: newHolder || undefined,
         kondisi: (newKondisi as AssetCondition) || undefined,
         catatan: notes || undefined,
+        expectedUpdatedAt: selectedAsset.updatedAt,
       });
       closePanel();
       loadAssets();
@@ -200,6 +201,10 @@ export default function TrackingPage() {
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal menyimpan mutasi';
       showToast(message, 'danger');
+      if (err instanceof ApiError && err.status === 409) {
+        closePanel();
+        loadAssets();
+      }
     } finally {
       setSaving(false);
     }

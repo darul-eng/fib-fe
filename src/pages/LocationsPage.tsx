@@ -364,6 +364,7 @@ export default function LocationsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingUpdatedAt, setEditingUpdatedAt] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -464,6 +465,7 @@ export default function LocationsPage() {
 
   function openCreate(defaultTipe: LocationType = 'gedung', defaultParentId = '', defaultGedungId = '') {
     setEditingId(null);
+    setEditingUpdatedAt(null);
     setNama('');
     setTipe(defaultTipe);
     setGedungId(defaultGedungId);
@@ -473,6 +475,7 @@ export default function LocationsPage() {
 
   function openEdit(l: Location) {
     setEditingId(l.id);
+    setEditingUpdatedAt(l.updatedAt);
     setNama(l.nama);
     setTipe(l.tipe);
     if (l.tipe === 'ruangan') {
@@ -488,6 +491,7 @@ export default function LocationsPage() {
   function closeForm() {
     setShowForm(false);
     setEditingId(null);
+    setEditingUpdatedAt(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -496,7 +500,7 @@ export default function LocationsPage() {
     try {
       const payload = { nama, tipe, parentId: tipe === 'gedung' ? undefined : parentId || undefined };
       if (editingId) {
-        await apiPatch(`/locations/${editingId}`, payload);
+        await apiPatch(`/locations/${editingId}`, { ...payload, expectedUpdatedAt: editingUpdatedAt });
         showToast('Lokasi berhasil diperbarui');
       } else {
         await apiPost('/locations', payload);
@@ -511,6 +515,10 @@ export default function LocationsPage() {
       }
     } catch (e) {
       showToast(e instanceof ApiError ? e.message : 'Gagal menyimpan lokasi', 'danger');
+      if (e instanceof ApiError && e.status === 409) {
+        closeForm();
+        reloadAll();
+      }
     } finally {
       setSaving(false);
     }

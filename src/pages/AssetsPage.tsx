@@ -95,6 +95,11 @@ function AttributeSummary({ asset }: { asset: Asset }) {
   );
 }
 
+function formatRibuan(digits: string): string {
+  if (!digits) return '';
+  return Number(digits).toLocaleString('id-ID');
+}
+
 type FormState = {
   nama: string;
   categoryId: string;
@@ -225,6 +230,7 @@ export default function AssetsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingUpdatedAt, setEditingUpdatedAt] = useState<string | null>(null);
   const [editingLocationNama, setEditingLocationNama] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
 
@@ -239,6 +245,7 @@ export default function AssetsPage() {
 
   const [duplicateTarget, setDuplicateTarget] = useState<Asset | null>(null);
   const [duplicateCount, setDuplicateCount] = useState(2);
+  const [duplicating, setDuplicating] = useState(false);
 
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -247,8 +254,8 @@ export default function AssetsPage() {
 
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printSelection, setPrintSelection] = useState<Set<string>>(new Set());
-  const [printColumns, setPrintColumns] = useState(3);
-  const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('sedang');
+  const [printColumns, setPrintColumns] = useState(4);
+  const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('kecil');
   const [printing, setPrinting] = useState(false);
 
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
@@ -290,6 +297,7 @@ export default function AssetsPage() {
 
   function openCreateForm() {
     setEditingId(null);
+    setEditingUpdatedAt(null);
     setEditingLocationNama(null);
     setForm(EMPTY_FORM);
     setPhotoFile(null);
@@ -298,6 +306,7 @@ export default function AssetsPage() {
 
   function openEditForm(asset: Asset) {
     setEditingId(asset.id);
+    setEditingUpdatedAt(asset.updatedAt);
     setEditingLocationNama(asset.location?.nama ?? null);
     setForm({
       nama: asset.nama,
@@ -332,7 +341,7 @@ export default function AssetsPage() {
         sumberDana: form.sumberDana || undefined,
         attributes: form.attributes,
         ...(editingId
-          ? {}
+          ? { expectedUpdatedAt: editingUpdatedAt ?? undefined }
           : {
               kondisi: form.kondisi,
               locationId: form.locationId || undefined,
@@ -349,10 +358,17 @@ export default function AssetsPage() {
       showToast(editingId ? `Aset "${saved.nama}" berhasil diperbarui!` : `Aset "${saved.nama}" berhasil didaftarkan!`);
       setShowForm(false);
       setEditingId(null);
+      setEditingUpdatedAt(null);
       setPhotoFile(null);
       await loadAssets();
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : 'Gagal menyimpan aset', 'danger');
+      if (err instanceof ApiError && err.status === 409) {
+        setShowForm(false);
+        setEditingId(null);
+        setEditingUpdatedAt(null);
+        await loadAssets();
+      }
     } finally {
       setSaving(false);
     }
@@ -376,7 +392,8 @@ export default function AssetsPage() {
   }
 
   async function handleDuplicateConfirm() {
-    if (!duplicateTarget) return;
+    if (!duplicateTarget || duplicating) return;
+    setDuplicating(true);
     try {
       const created = await duplicateAsset(duplicateTarget.id, duplicateCount);
       showToast(`${created.length} salinan aset "${duplicateTarget.nama}" berhasil dibuat`);
@@ -384,6 +401,8 @@ export default function AssetsPage() {
       await loadAssets();
     } catch {
       showToast('Gagal menduplikasi aset', 'danger');
+    } finally {
+      setDuplicating(false);
     }
   }
 
@@ -724,11 +743,13 @@ export default function AssetsPage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-600">Harga Beli (Rp)</label>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
-                value={form.hargaBeli}
-                onChange={(e) => setForm((f) => ({ ...f, hargaBeli: e.target.value }))}
-                placeholder="Contoh: 14000000"
+                value={formatRibuan(form.hargaBeli)}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, hargaBeli: e.target.value.replace(/\D/g, '') }))
+                }
+                placeholder="Contoh: 14.000.000"
                 className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               />
             </div>
@@ -1121,11 +1142,19 @@ export default function AssetsPage() {
               className="w-full p-2 sm:p-2.5 min-h-11 text-base border border-slate-200 rounded-lg outline-none mb-4"
             />
             <div className="flex justify-end gap-2">
-              <button className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600" onClick={() => setDuplicateTarget(null)}>
+              <button
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 disabled:opacity-60"
+                onClick={() => setDuplicateTarget(null)}
+                disabled={duplicating}
+              >
                 Batal
               </button>
-              <button className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold" onClick={handleDuplicateConfirm}>
-                Duplikasi
+              <button
+                className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold disabled:opacity-60"
+                onClick={handleDuplicateConfirm}
+                disabled={duplicating}
+              >
+                {duplicating ? 'Menduplikasi...' : 'Duplikasi'}
               </button>
             </div>
           </div>
