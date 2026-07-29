@@ -38,12 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 p-6 shadow-lg">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-lg"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            S
-          </div>
+          <img src="/logo/logo-unhas.png" alt="Logo Universitas Hasanuddin" className="w-10 h-10 object-contain" />
           <span className="text-sm font-semibold tracking-tight text-primary">SIAP</span>
         </div>
         <p className="mt-2 text-xs text-slate-500">Sistem Manajeman Aset, Sarana, dan Prasarana</p>
