@@ -239,6 +239,7 @@ export default function AssetsPage() {
 
   const [duplicateTarget, setDuplicateTarget] = useState<Asset | null>(null);
   const [duplicateCount, setDuplicateCount] = useState(2);
+  const [duplicating, setDuplicating] = useState(false);
 
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -376,7 +377,8 @@ export default function AssetsPage() {
   }
 
   async function handleDuplicateConfirm() {
-    if (!duplicateTarget) return;
+    if (!duplicateTarget || duplicating) return;
+    setDuplicating(true);
     try {
       const created = await duplicateAsset(duplicateTarget.id, duplicateCount);
       showToast(`${created.length} salinan aset "${duplicateTarget.nama}" berhasil dibuat`);
@@ -384,6 +386,8 @@ export default function AssetsPage() {
       await loadAssets();
     } catch {
       showToast('Gagal menduplikasi aset', 'danger');
+    } finally {
+      setDuplicating(false);
     }
   }
 
@@ -1121,11 +1125,19 @@ export default function AssetsPage() {
               className="w-full p-2 sm:p-2.5 min-h-11 text-base border border-slate-200 rounded-lg outline-none mb-4"
             />
             <div className="flex justify-end gap-2">
-              <button className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600" onClick={() => setDuplicateTarget(null)}>
+              <button
+                className="min-h-11 px-2.5 sm:px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 disabled:opacity-60"
+                onClick={() => setDuplicateTarget(null)}
+                disabled={duplicating}
+              >
                 Batal
               </button>
-              <button className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold" onClick={handleDuplicateConfirm}>
-                Duplikasi
+              <button
+                className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold disabled:opacity-60"
+                onClick={handleDuplicateConfirm}
+                disabled={duplicating}
+              >
+                {duplicating ? 'Menduplikasi...' : 'Duplikasi'}
               </button>
             </div>
           </div>
