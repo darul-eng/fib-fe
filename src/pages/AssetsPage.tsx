@@ -254,8 +254,8 @@ export default function AssetsPage() {
 
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [printSelection, setPrintSelection] = useState<Set<string>>(new Set());
-  const [printColumns, setPrintColumns] = useState(3);
-  const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('sedang');
+  const [printColumns, setPrintColumns] = useState(4);
+  const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('kecil');
   const [printing, setPrinting] = useState(false);
 
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
