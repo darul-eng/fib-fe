@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import { changePassword, ApiError } from '../api/client';
 import { showToast } from './ToastContainer';
+import { PasswordInput } from './PasswordInput';
 
 export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -50,8 +51,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Password Saat Ini</label>
-            <input
-              type="password"
+            <PasswordInput
               className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
               required
               autoFocus
@@ -61,8 +61,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Password Baru</label>
-            <input
-              type="password"
+            <PasswordInput
               className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
               required
               minLength={8}
@@ -72,8 +71,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Konfirmasi Password Baru</label>
-            <input
-              type="password"
+            <PasswordInput
               className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
               required
               minLength={8}

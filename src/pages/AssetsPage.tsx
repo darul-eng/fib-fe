@@ -95,6 +95,11 @@ function AttributeSummary({ asset }: { asset: Asset }) {
   );
 }
 
+function formatRibuan(digits: string): string {
+  if (!digits) return '';
+  return Number(digits).toLocaleString('id-ID');
+}
+
 type FormState = {
   nama: string;
   categoryId: string;
@@ -225,6 +230,7 @@ export default function AssetsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingUpdatedAt, setEditingUpdatedAt] = useState<string | null>(null);
   const [editingLocationNama, setEditingLocationNama] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
 
@@ -291,6 +297,7 @@ export default function AssetsPage() {
 
   function openCreateForm() {
     setEditingId(null);
+    setEditingUpdatedAt(null);
     setEditingLocationNama(null);
     setForm(EMPTY_FORM);
     setPhotoFile(null);
@@ -299,6 +306,7 @@ export default function AssetsPage() {
 
   function openEditForm(asset: Asset) {
     setEditingId(asset.id);
+    setEditingUpdatedAt(asset.updatedAt);
     setEditingLocationNama(asset.location?.nama ?? null);
     setForm({
       nama: asset.nama,
@@ -333,7 +341,7 @@ export default function AssetsPage() {
         sumberDana: form.sumberDana || undefined,
         attributes: form.attributes,
         ...(editingId
-          ? {}
+          ? { expectedUpdatedAt: editingUpdatedAt ?? undefined }
           : {
               kondisi: form.kondisi,
               locationId: form.locationId || undefined,
@@ -350,10 +358,17 @@ export default function AssetsPage() {
       showToast(editingId ? `Aset "${saved.nama}" berhasil diperbarui!` : `Aset "${saved.nama}" berhasil didaftarkan!`);
       setShowForm(false);
       setEditingId(null);
+      setEditingUpdatedAt(null);
       setPhotoFile(null);
       await loadAssets();
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : 'Gagal menyimpan aset', 'danger');
+      if (err instanceof ApiError && err.status === 409) {
+        setShowForm(false);
+        setEditingId(null);
+        setEditingUpdatedAt(null);
+        await loadAssets();
+      }
     } finally {
       setSaving(false);
     }
@@ -728,11 +743,13 @@ export default function AssetsPage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-600">Harga Beli (Rp)</label>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
-                value={form.hargaBeli}
-                onChange={(e) => setForm((f) => ({ ...f, hargaBeli: e.target.value }))}
-                placeholder="Contoh: 14000000"
+                value={formatRibuan(form.hargaBeli)}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, hargaBeli: e.target.value.replace(/\D/g, '') }))
+                }
+                placeholder="Contoh: 14.000.000"
                 className="p-2 sm:p-2.5 min-h-11 text-base sm:text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white outline-none"
               />
             </div>

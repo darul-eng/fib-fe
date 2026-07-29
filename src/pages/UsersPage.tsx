@@ -3,6 +3,7 @@ import { Plus, X, KeyRound, ShieldAlert } from 'lucide-react';
 import { listUsers, registerUser, ApiError, type User, type UserRole } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { ResetPasswordModal } from '../components/ResetPasswordModal';
+import { PasswordInput } from '../components/PasswordInput';
 import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -152,8 +153,7 @@ export default function UsersPage() {
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Password Awal <span className="text-red-600">*</span>
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   className="w-full p-2 border border-slate-200 rounded-lg text-base sm:text-xs min-h-11"
                   required
                   minLength={8}
