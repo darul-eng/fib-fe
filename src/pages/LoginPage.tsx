@@ -37,11 +37,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 p-6 shadow-lg">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <img src="/logo/logo-unhas.png" alt="Logo Universitas Hasanuddin" className="w-10 h-10 object-contain" />
-          <span className="text-sm font-semibold tracking-tight text-primary">SIAP</span>
+        <div className="flex flex-col items-center text-center">
+          <img src="/logo/logo-unhas.png" alt="Logo Universitas Hasanuddin" className="w-14 h-14 object-contain" />
+          <span className="mt-2 text-sm font-semibold tracking-tight text-primary">SIAP</span>
+          <p className="mt-1 text-xs text-slate-500">Sistem Manajeman Aset, Sarana, dan Prasarana</p>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Sistem Manajeman Aset, Sarana, dan Prasarana</p>
 
         <div className="my-4 border-t border-slate-200" />
 
@@ -109,9 +109,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-[11px] text-slate-400 mt-6">
-          Sistem Manajemen Aset FIB · v1.0.0-alpha
-          <br />
-          <span className="text-slate-300">©2026 Fakultas Ilmu Budaya Universitas Hasanuddin</span>
+          Lupa kata sandi? Silakan hubungi Admin ASET FIB untuk bantuan reset manual.
         </p>
       </div>
     </div>
