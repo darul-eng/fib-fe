@@ -52,12 +52,7 @@ export default function PublicLocationPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm px-4 py-3 flex items-center gap-2">
-        <div
-          className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-lg"
-          style={{ backgroundColor: 'var(--color-primary)' }}
-        >
-          S
-        </div>
+        <img src="/logo/logo-unhas.png" alt="Logo Universitas Hasanuddin" className="w-8 h-8 object-contain" />
         <div>
           <h1 className="text-sm font-semibold tracking-tight leading-none text-slate-800">SIAP</h1>
           <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Isi Ruangan Publik</span>
