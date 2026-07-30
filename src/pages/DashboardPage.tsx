@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Activity, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { Activity, PieChart as PieChartIcon, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { apiGet } from '../api/client';
 import type { AssetCondition, Category, DashboardQuery, DashboardStats, Movement } from '../api/client';
-import { getDashboardStats } from '../api/client';
+import { getDashboardStats, downloadDashboardExport } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { RoomSelect } from '../components/RoomSelect';
 import { KONDISI_LABEL } from '../lib/kondisi';
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const KONDISI_OPTIONS: AssetCondition[] = ['baik', 'rusak_ringan', 'rusak_berat', 'perbaikan'];
 
@@ -35,6 +44,7 @@ export default function DashboardPage() {
   const [filterKondisi, setFilterKondisi] = useState('');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     apiGet<Category[]>('/categories').then(setCategories).catch(() => showToast('Gagal memuat kategori', 'danger'));
@@ -59,12 +69,35 @@ export default function DashboardPage() {
   const pieData =
     stats?.conditionDistribution.map((c) => ({ name: KONDISI_LABEL[c.kondisi], value: c.count, kondisi: c.kondisi })) ?? [];
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await downloadDashboardExport(query);
+      downloadBlob(blob, 'laporan-aset.xlsx');
+    } catch {
+      showToast('Gagal mengunduh laporan Excel', 'danger');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <>
       {/* Page header */}
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-lg sm:text-xl font-bold tracking-tight">Ikhtisar Inventaris</h1>
-        <p className="text-[11px] sm:text-xs text-slate-500">Pemantauan sebaran, kondisi fisik, dan nilai buku aset Fakultas.</p>
+      <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight">Ikhtisar Inventaris</h1>
+          <p className="text-[11px] sm:text-xs text-slate-500">Pemantauan sebaran, kondisi fisik, dan nilai buku aset Fakultas.</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+          className="btn-primary min-h-11 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide shadow-sm inline-flex items-center gap-1.5 disabled:opacity-60 shrink-0"
+        >
+          <FileSpreadsheet size={14} />
+          {exporting ? 'Mengunduh…' : 'Export Excel'}
+        </button>
       </div>
 
       {/* Filters */}
