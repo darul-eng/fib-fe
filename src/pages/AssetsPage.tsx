@@ -26,6 +26,7 @@ import type {
   Category,
   FieldType,
   ImportPreviewResult,
+  Location,
 } from '../api/client';
 import {
   listAssets,
@@ -39,11 +40,13 @@ import {
   downloadAssetImportTemplate,
   printQrBatch,
   regenerateAssetToken,
+  listLocations,
 } from '../api/client';
 import { showToast } from '../components/ToastContainer';
 import { confirmDialog } from '../components/ConfirmDialog';
 import { RoomSelect } from '../components/RoomSelect';
 import { KONDISI_LABEL, kondisiBadgeClass } from '../lib/kondisi';
+import { computePrintLayout } from '../lib/qrPrintLayout';
 import { useAuth, hasFullAccess } from '../auth/AuthContext';
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -253,10 +256,24 @@ export default function AssetsPage() {
   const [importing, setImporting] = useState(false);
 
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [printSelection, setPrintSelection] = useState<Set<string>>(new Set());
   const [printColumns, setPrintColumns] = useState(4);
   const [printSize, setPrintSize] = useState<'kecil' | 'sedang'>('kecil');
   const [printing, setPrinting] = useState(false);
+  // Cetak QR massal diarahkan lewat lokasi (gedung/lantai/ruangan), bukan lagi
+  // memilih dari daftar aset yang sedang tampil — daftar itu dipaginasi (20/hlm)
+  // sehingga "pilih semua" sebelumnya tidak pernah mencakup seluruh aset.
+  const [printUpper, setPrintUpper] = useState<Location[]>([]);
+  const [printGedungId, setPrintGedungId] = useState('');
+  const [printLantaiId, setPrintLantaiId] = useState('');
+  const [printRuanganId, setPrintRuanganId] = useState('');
+  const [printRooms, setPrintRooms] = useState<Location[]>([]);
+  const [printPreviewTotal, setPrintPreviewTotal] = useState<number | null>(null);
+  const [printPreviewLoading, setPrintPreviewLoading] = useState(false);
+
+  const printGedungOptions = printUpper.filter((l) => l.tipe === 'gedung');
+  const printLantaiOptions = printUpper.filter((l) => l.tipe === 'lantai' && l.parentId === printGedungId);
+  const printLocationId = printRuanganId || printLantaiId || printGedungId;
+  const printLayout = computePrintLayout(printPreviewTotal ?? 0, printColumns, printSize);
 
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
 
@@ -268,6 +285,18 @@ export default function AssetsPage() {
     void loadAssets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filterCategory, filterKondisi, filterLocationId]);
+
+  useEffect(() => {
+    if (!showPrintModal || !printLocationId) {
+      setPrintPreviewTotal(null);
+      return;
+    }
+    setPrintPreviewLoading(true);
+    listAssets({ locationId: printLocationId, limit: 1 })
+      .then((r) => setPrintPreviewTotal(r.total))
+      .catch(() => setPrintPreviewTotal(null))
+      .finally(() => setPrintPreviewLoading(false));
+  }, [showPrintModal, printLocationId]);
 
   async function loadAssets() {
     setLoading(true);
@@ -446,17 +475,35 @@ export default function AssetsPage() {
   }
 
   function openPrintModal() {
-    setPrintSelection(new Set(assets.map((a) => a.id)));
+    setPrintGedungId('');
+    setPrintLantaiId('');
+    setPrintRuanganId('');
+    setPrintRooms([]);
+    setPrintPreviewTotal(null);
     setShowPrintModal(true);
+    if (printUpper.length === 0) {
+      listLocations()
+        .then(setPrintUpper)
+        .catch(() => showToast('Gagal memuat daftar lokasi', 'danger'));
+    }
   }
 
-  function togglePrintSelection(id: string) {
-    setPrintSelection((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function handlePrintGedungChange(id: string) {
+    setPrintGedungId(id);
+    setPrintLantaiId('');
+    setPrintRuanganId('');
+    setPrintRooms([]);
+  }
+
+  function handlePrintLantaiChange(id: string) {
+    setPrintLantaiId(id);
+    setPrintRuanganId('');
+    setPrintRooms([]);
+    if (id) {
+      listLocations({ parentId: id })
+        .then(setPrintRooms)
+        .catch(() => setPrintRooms([]));
+    }
   }
 
   async function handlePrintSingle(asset: Asset) {
@@ -471,17 +518,17 @@ export default function AssetsPage() {
     }
   }
 
-  async function handlePrintBatch() {
-    if (printSelection.size === 0) return;
+  async function handlePrintByLocation() {
+    if (!printLocationId || !printPreviewTotal) return;
     setPrinting(true);
     try {
       const blob = await printQrBatch({
-        assetIds: Array.from(printSelection),
+        assetLocationId: printLocationId,
         columns: printColumns,
         size: printSize,
       });
       downloadBlob(blob, 'label-qr-aset.pdf');
-      showToast(`Label QR untuk ${printSelection.size} aset berhasil dibuat`);
+      showToast(`Label QR untuk ${printPreviewTotal} aset berhasil dibuat`);
       setShowPrintModal(false);
     } catch {
       showToast('Gagal membuat label QR', 'danger');
@@ -612,9 +659,8 @@ export default function AssetsPage() {
                 <Download size={16} /> <span className="hidden sm:inline">Import</span>
               </button>
               <button
-                disabled={assets.length === 0}
-                title="Cetak label QR massal"
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Cetak label QR massal per ruangan"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0 flex items-center justify-center gap-1.5 min-h-11 min-w-11 lg:min-w-0 px-0 sm:px-3 rounded-lg text-xs font-bold"
                 onClick={openPrintModal}
               >
                 <Printer size={16} /> <span className="hidden sm:inline">Cetak QR</span>
@@ -1041,7 +1087,7 @@ export default function AssetsPage() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Cetak Massal Label QR (Grid A4)</h3>
-                <p className="text-[11px] text-slate-500">Pilih aset yang akan dicetak labelnya.</p>
+                <p className="text-[11px] text-slate-500">Pilih gedung / lantai / ruangan — semua aset di dalamnya akan dicetak.</p>
               </div>
               <button
                 className="min-h-11 min-w-11 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-md"
@@ -1049,6 +1095,56 @@ export default function AssetsPage() {
               >
                 <X size={16} />
               </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+              <div>
+                <span className="block text-xs font-semibold text-slate-600 mb-1">Gedung</span>
+                <select
+                  value={printGedungId}
+                  onChange={(e) => handlePrintGedungChange(e.target.value)}
+                  className="w-full p-2 min-h-11 text-base sm:text-xs border border-slate-200 rounded-lg"
+                >
+                  <option value="">Pilih gedung...</option>
+                  {printGedungOptions.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-slate-600 mb-1">Lantai</span>
+                <select
+                  value={printLantaiId}
+                  disabled={!printGedungId}
+                  onChange={(e) => handlePrintLantaiChange(e.target.value)}
+                  className="w-full p-2 min-h-11 text-base sm:text-xs border border-slate-200 rounded-lg disabled:opacity-60"
+                >
+                  <option value="">Semua lantai</option>
+                  {printLantaiOptions.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-slate-600 mb-1">Ruangan</span>
+                <select
+                  value={printRuanganId}
+                  disabled={!printLantaiId}
+                  onChange={(e) => setPrintRuanganId(e.target.value)}
+                  className="w-full p-2 min-h-11 text-base sm:text-xs border border-slate-200 rounded-lg disabled:opacity-60"
+                >
+                  <option value="">Semua ruangan</option>
+                  {printRooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3 p-3 bg-slate-50 rounded-lg mb-4 text-xs">
@@ -1075,34 +1171,25 @@ export default function AssetsPage() {
                   <option value="kecil">Kecil</option>
                 </select>
               </div>
-              <button
-                type="button"
-                className="ml-auto text-[11px] font-semibold text-primary underline self-end"
-                onClick={() =>
-                  setPrintSelection((prev) =>
-                    prev.size === assets.length ? new Set() : new Set(assets.map((a) => a.id)),
-                  )
-                }
-              >
-                {printSelection.size === assets.length ? 'Batalkan semua' : 'Pilih semua'}
-              </button>
             </div>
 
-            <div className="max-h-72 overflow-y-auto border border-slate-100 rounded-lg divide-y divide-slate-100">
-              {assets.map((a) => (
-                <label key={a.id} className="flex items-center gap-2.5 p-2.5 min-h-11 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 shrink-0"
-                    checked={printSelection.has(a.id)}
-                    onChange={() => togglePrintSelection(a.id)}
-                  />
-                  <span className="text-xs font-semibold text-slate-700 truncate">{a.nama}</span>
-                  <span className="text-[10px] font-mono text-slate-400 truncate">{a.kode}</span>
-                </label>
-              ))}
-              {assets.length === 0 && (
-                <p className="text-xs text-slate-400 text-center py-6">Tidak ada aset di halaman ini.</p>
+            <div className="border border-slate-100 rounded-lg p-3 mb-4 text-xs">
+              {!printLocationId && <p className="text-slate-400 text-center py-2">Pilih lokasi di atas untuk melihat pratinjau.</p>}
+              {printLocationId && printPreviewLoading && <p className="text-slate-400 text-center py-2">Menghitung jumlah aset...</p>}
+              {printLocationId && !printPreviewLoading && printPreviewTotal !== null && (
+                printPreviewTotal === 0 ? (
+                  <p className="text-slate-400 text-center py-2">Tidak ada aset di lokasi ini.</p>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">
+                      <span className="font-bold text-slate-800">{printPreviewTotal}</span> aset akan dicetak
+                    </span>
+                    <span className="text-slate-600">
+                      Estimasi <span className="font-bold text-slate-800">{printLayout.totalPages}</span> halaman A4
+                      <span className="text-slate-400"> ({printLayout.perPage} label/halaman)</span>
+                    </span>
+                  </div>
+                )
               )}
             </div>
 
@@ -1114,11 +1201,11 @@ export default function AssetsPage() {
                 Batal
               </button>
               <button
-                disabled={printSelection.size === 0 || printing}
+                disabled={!printPreviewTotal || printing}
                 className="btn-primary min-h-11 px-3 sm:px-4 rounded-lg text-xs font-bold flex items-center gap-1.5"
-                onClick={() => void handlePrintBatch()}
+                onClick={() => void handlePrintByLocation()}
               >
-                <Printer size={14} /> {printing ? 'Membuat PDF...' : `Cetak (${printSelection.size})`}
+                <Printer size={14} /> {printing ? 'Membuat PDF...' : `Cetak Semua${printPreviewTotal ? ` (${printPreviewTotal})` : ''}`}
               </button>
             </div>
           </div>

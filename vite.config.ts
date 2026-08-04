@@ -44,10 +44,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy /api ke backend saat dev
-      '/api': 'http://localhost:3000',
+      // Proxy /api ke backend saat dev. Pakai 127.0.0.1 (bukan "localhost") karena
+      // backend bind ke IPv4 saja — di mesin yang me-resolve "localhost" ke ::1
+      // (IPv6) duluan, proxy akan gagal dengan ECONNREFUSED ::1:3000.
+      '/api': 'http://127.0.0.1:3000',
       // Proxy /uploads ke backend saat dev (foto aset)
-      '/uploads': 'http://localhost:3000',
+      '/uploads': 'http://127.0.0.1:3000',
     },
   },
   preview: {
@@ -55,8 +57,8 @@ export default defineConfig({
     // Sama seperti proxy dev di atas — tanpa ini, `vite preview` (build produksi,
     // dipakai untuk uji nyata PWA/service worker) tidak bisa memanggil backend.
     proxy: {
-      '/api': 'http://localhost:3000',
-      '/uploads': 'http://localhost:3000',
+      '/api': 'http://127.0.0.1:3000',
+      '/uploads': 'http://127.0.0.1:3000',
     },
   },
 });

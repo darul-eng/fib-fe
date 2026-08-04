@@ -358,6 +358,7 @@ export function locationQrPngUrl(id: string) {
 export type PrintQrInput = {
   assetIds?: string[];
   locationIds?: string[];
+  assetLocationId?: string;
   columns?: number;
   size?: 'kecil' | 'sedang';
 };
